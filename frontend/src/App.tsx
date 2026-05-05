@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { Music, ListMusic, Upload } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ImportUpload } from "@/components/ImportUpload";
-import { TrackList } from "@/components/TrackList";
-import { MusicBrainzDialog } from "@/components/MusicBrainzDialog";
-import { fetchBatches, fetchTracks } from "@/lib/api";
-import type { ImportBatch, ImportResult, MusicBrainzCandidate, Track } from "@/lib/types";
+import { useEffect, useState } from 'react';
+import { Music, ListMusic, Upload } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ImportUpload } from '@/components/ImportUpload';
+import { TrackList } from '@/components/TrackList';
+import { MusicBrainzDialog } from '@/components/MusicBrainzDialog';
+import { fetchBatches, fetchTracks } from '@/lib/api';
+import type { ImportBatch, ImportResult, MusicBrainzCandidate, Track } from '@/lib/types';
 
 export function App() {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
@@ -15,7 +15,7 @@ export function App() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [activeMatchTrack, setActiveMatchTrack] = useState<Track | null>(null);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
-  const [importErrors, setImportErrors] = useState<ImportResult["errors"]>([]);
+  const [importErrors, setImportErrors] = useState<ImportResult['errors']>([]);
   const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
@@ -43,10 +43,12 @@ export function App() {
   function handleImportSuccess(result: ImportResult) {
     setImportErrors(result.errors);
     setShowImport(false);
-    fetchBatches().then(updated => {
-      setBatches(updated);
-      handleBatchSelect(result.batchId);
-    }).catch(console.error);
+    fetchBatches()
+      .then(updated => {
+        setBatches(updated);
+        handleBatchSelect(result.batchId);
+      })
+      .catch(console.error);
   }
 
   function handleMatchSaved(trackId: string, candidate: MusicBrainzCandidate) {
@@ -75,8 +77,7 @@ export function App() {
               setShowImport(true);
               setSelectedBatchId(null);
               setTracks([]);
-            }}
-          >
+            }}>
             <Upload className="h-4 w-4 mr-1" />
             Import CSV
           </Button>
@@ -102,14 +103,14 @@ export function App() {
                       <li key={batch.id}>
                         <button
                           className={
-                            "w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors " +
-                            (selectedBatchId === batch.id ? "bg-muted font-medium" : "")
+                            'w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors ' +
+                            (selectedBatchId === batch.id ? 'bg-muted font-medium' : '')
                           }
-                          onClick={() => handleBatchSelect(batch.id)}
-                        >
+                          onClick={() => handleBatchSelect(batch.id)}>
                           <p className="text-sm truncate">{batch.fileName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {batch.trackCount} tracks &middot; {new Date(batch.importedAt).toLocaleDateString()}
+                            {batch.trackCount} tracks &middot;{' '}
+                            {new Date(batch.importedAt).toLocaleDateString()}
                           </p>
                         </button>
                       </li>
@@ -146,7 +147,8 @@ export function App() {
                   <Card className="border-amber-300 bg-amber-50">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-amber-700">
-                        {importErrors.length} row{importErrors.length > 1 ? "s" : ""} failed to import
+                        {importErrors.length} row{importErrors.length > 1 ? 's' : ''} failed to
+                        import
                       </CardTitle>
                     </CardHeader>
                     <CardContent>

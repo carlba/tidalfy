@@ -46,8 +46,8 @@ export function TrackList({ tracks, onSearchMatch }: TrackListProps) {
             </p>
             {track.match ? (
               <div className="flex items-center gap-1 mt-1">
-                <Check className="h-3 w-3 text-green-500 shrink-0" />
-                <span className="text-xs text-green-600 truncate">
+                <Check className="h-3 w-3 text-success shrink-0" />
+                <span className="text-xs text-success truncate">
                   {track.match.title} — {track.match.artistCredit}
                 </span>
               </div>
