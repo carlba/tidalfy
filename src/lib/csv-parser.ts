@@ -1,3 +1,4 @@
+import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 
 const CSV_HEADER = [
@@ -55,42 +56,51 @@ export interface ParseResult {
   errors: { row: number; message: string; raw: string }[];
 }
 
-function parseCsvLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = '';
-  let insideQuotes = false;
-
-  for (const char of line) {
-    if (char === '"') {
-      insideQuotes = !insideQuotes;
-    } else if (char === ',' && !insideQuotes) {
-      fields.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  fields.push(current);
-  return fields;
-}
-
 export function parseSpotifyCsv(csvContent: string): ParseResult {
-  const lines = csvContent.split('\n').filter(line => line.trim().length > 0);
-
-  if (lines.length < 2) {
+  if (csvContent.trim().length === 0) {
     return { valid: [], errors: [{ row: 0, message: 'CSV has no data rows', raw: '' }] };
   }
 
-  const headerFields = parseCsvLine(lines[0]);
-  const expectedHeaders = CSV_HEADER as readonly string[];
+  let records: string[][];
+  try {
+    records = parse<string[]>(csvContent, {
+      bom: true,
+      skip_empty_lines: true,
+      relax_quotes: true,
+      trim: true,
+    });
+  } catch (error) {
+    return {
+      valid: [],
+      errors: [
+        {
+          row: 0,
+          message: error instanceof Error ? error.message : String(error),
+          raw: csvContent,
+        },
+      ],
+    };
+  }
 
-  // Validate header matches expected columns (first 12 required columns)
+  if (records.length < 2) {
+    return { valid: [], errors: [{ row: 0, message: 'CSV has no data rows', raw: '' }] };
+  }
+
+  const headerFields = records[0].map(field => String(field));
+  const expectedHeaders = CSV_HEADER as readonly string[];
   const requiredHeaders = expectedHeaders.slice(0, 12);
+
   for (const required of requiredHeaders) {
     if (!headerFields.includes(required)) {
       return {
         valid: [],
-        errors: [{ row: 0, message: `Missing required column: ${required}`, raw: lines[0] }],
+        errors: [
+          {
+            row: 0,
+            message: `Missing required column: ${required}`,
+            raw: headerFields.join(','),
+          },
+        ],
       };
     }
   }
@@ -98,11 +108,11 @@ export function parseSpotifyCsv(csvContent: string): ParseResult {
   const valid: SpotifyTrackRow[] = [];
   const errors: { row: number; message: string; raw: string }[] = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const fields = parseCsvLine(rawLine);
+  for (let i = 0; i < records.length - 1; i++) {
+    const rowNumber = i + 1;
+    const fields = records[i + 1];
     const rowObject = Object.fromEntries(
-      headerFields.map((header, idx) => [header, fields[idx] ?? ''])
+      headerFields.map((header, idx) => [header, String(fields[idx] ?? '')])
     );
 
     const result = spotifyTrackRowSchema.safeParse(rowObject);
@@ -110,11 +120,11 @@ export function parseSpotifyCsv(csvContent: string): ParseResult {
       valid.push(result.data);
     } else {
       errors.push({
-        row: i,
+        row: rowNumber,
         message: result.error.issues
           .map(issue => `${issue.path.join('.')}: ${issue.message}`)
           .join('; '),
-        raw: rawLine,
+        raw: fields.join(','),
       });
     }
   }
