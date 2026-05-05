@@ -38,6 +38,9 @@ const musicBrainzCandidateSchema = z.object({
   artistCredit: z.string(),
   releaseTitle: z.string().nullable(),
   releaseDate: z.string().nullable(),
+  releaseCountry: z.string().nullable(),
+  durationMs: z.number().nullable(),
+  disambiguation: z.string().nullable(),
   score: z.number().nullable(),
 });
 

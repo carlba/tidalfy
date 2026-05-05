@@ -63,7 +63,7 @@ export function parseSpotifyCsv(csvContent: string): ParseResult {
 
   let records: string[][];
   try {
-    records = parse<string[]>(csvContent, {
+    records = parse(csvContent, {
       bom: true,
       skip_empty_lines: true,
       relax_quotes: true,

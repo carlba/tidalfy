@@ -44,7 +44,14 @@ export async function saveMatch(
   const response = await fetch(`/api/tracks/${trackId}/match`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(candidate),
+    body: JSON.stringify({
+      mbid: candidate.mbid,
+      title: candidate.title,
+      artistCredit: candidate.artistCredit,
+      releaseTitle: candidate.releaseTitle,
+      releaseDate: candidate.releaseDate,
+      score: candidate.score,
+    }),
   });
   return handleResponse<MusicBrainzMatch>(response);
 }

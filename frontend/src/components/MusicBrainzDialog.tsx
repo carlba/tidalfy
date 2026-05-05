@@ -18,6 +18,13 @@ interface MusicBrainzDialogProps {
   onMatchSaved: (trackId: string, candidate: MusicBrainzCandidate) => void;
 }
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzDialogProps) {
   const [candidates, setCandidates] = useState<MusicBrainzCandidate[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -118,19 +125,40 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm truncate">{candidate.title}</p>
                     <p className="text-xs text-muted-foreground">{candidate.artistCredit}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      MBID: {candidate.mbid}
+                    </p>
                     {candidate.releaseTitle && (
                       <p className="text-xs text-muted-foreground truncate">
                         {candidate.releaseTitle}
                         {candidate.releaseDate ? ` · ${candidate.releaseDate}` : ''}
+                        {candidate.releaseCountry ? ` · ${candidate.releaseCountry}` : ''}
                       </p>
                     )}
-                    {candidate.score !== null && (
-                      <Badge
-                        variant={candidate.score >= 90 ? 'success' : 'secondary'}
-                        className="mt-1">
-                        Score: {candidate.score}
-                      </Badge>
-                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {candidate.durationMs !== null && (
+                        <Badge variant="outline" className="text-xs px-1 py-0">
+                          {formatDuration(candidate.durationMs)}
+                        </Badge>
+                      )}
+                      {candidate.releaseCountry && (
+                        <Badge variant="outline" className="text-xs px-1 py-0">
+                          {candidate.releaseCountry}
+                        </Badge>
+                      )}
+                      {candidate.disambiguation && (
+                        <span className="text-[10px] text-muted-foreground italic">
+                          {candidate.disambiguation}
+                        </span>
+                      )}
+                      {candidate.score !== null && (
+                        <Badge
+                          variant={candidate.score >= 90 ? 'success' : 'secondary'}
+                          className="text-xs px-1 py-0">
+                          Score: {candidate.score}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <Button
                     size="sm"

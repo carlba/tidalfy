@@ -13,12 +13,15 @@ const musicBrainzReleaseSchema = z.object({
   id: z.string(),
   title: z.string(),
   date: z.string().optional(),
+  country: z.string().optional(),
 });
 
 const musicBrainzRecordingSchema = z.object({
   id: z.string(),
   title: z.string(),
   score: z.number().optional(),
+  length: z.number().optional(),
+  disambiguation: z.string().optional(),
   'artist-credit': z.array(musicBrainzArtistCreditSchema).optional(),
   releases: z.array(musicBrainzReleaseSchema).optional(),
 });
@@ -33,6 +36,9 @@ export interface MusicBrainzCandidate {
   artistCredit: string;
   releaseTitle: string | null;
   releaseDate: string | null;
+  releaseCountry: string | null;
+  durationMs: number | null;
+  disambiguation: string | null;
   score: number | null;
 }
 
@@ -65,6 +71,9 @@ export async function searchMusicBrainz(
         recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
       releaseTitle: recording.releases?.[0]?.title ?? null,
       releaseDate: recording.releases?.[0]?.date ?? null,
+      releaseCountry: recording.releases?.[0]?.country ?? null,
+      durationMs: recording.length ?? null,
+      disambiguation: recording.disambiguation ?? null,
       score: recording.score ?? null,
     }));
   } catch (error) {
