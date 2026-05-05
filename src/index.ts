@@ -1,13 +1,6 @@
-import { fileURLToPath } from 'url';
-import { config, LOGGER } from './registry.js';
+import { startServer } from './server.js';
 
-const logger = LOGGER.child({ module: 'index' });
-
-export function helloWorld() {
-  return `Hello World! NODE_ENV is ${config.NODE_ENV}`;
-}
-
-const isMain = process.argv[1] === fileURLToPath(import.meta.url);
-if (isMain) {
-  logger.info(helloWorld());
-}
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});

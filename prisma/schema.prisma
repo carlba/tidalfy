@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ImportBatch {
+  id         String   @id @default(cuid()) @map("id")
+  fileName   String   @map("file_name")
+  importedAt DateTime @default(now()) @map("imported_at")
+  tracks     Track[]  @relation("TrackBatch")
+
+  @@map("import_batch")
+}
+
+model Track {
+  id          String            @id @default(cuid()) @map("id")
+  batchId     String            @map("batch_id")
+  batch       ImportBatch       @relation(fields: [batchId], references: [id], onDelete: Cascade, name: "TrackBatch")
+  spotifyUri  String            @map("spotify_uri")
+  trackName   String            @map("track_name")
+  albumName   String            @map("album_name")
+  artistNames String[]          @map("artist_names")
+  releaseDate String?           @map("release_date")
+  durationMs  Int               @map("duration_ms")
+  popularity  Int               @map("popularity")
+  explicit    Boolean           @map("explicit")
+  addedBy     String?           @map("added_by")
+  addedAt     DateTime?         @map("added_at")
+  genres      String[]          @map("genres")
+  recordLabel String?           @map("record_label")
+  rawData     Json              @map("raw_data")
+  match       MusicBrainzMatch? @relation(name: "TrackMatch")
+
+  @@map("track")
+}
+
+model MusicBrainzMatch {
+  id           String   @id @default(cuid()) @map("id")
+  trackId      String   @unique @map("track_id")
+  track        Track    @relation(fields: [trackId], references: [id], onDelete: Cascade, name: "TrackMatch")
+  mbid         String   @map("mbid")
+  title        String   @map("title")
+  artistCredit String   @map("artist_credit")
+  releaseTitle String?  @map("release_title")
+  releaseDate  String?  @map("release_date")
+  score        Int?     @map("score")
+  selectedAt   DateTime @default(now()) @map("selected_at")
+
+  @@map("musicbrainz_match")
+}
