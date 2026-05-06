@@ -184,6 +184,7 @@ export function App() {
       </main>
 
       <MusicBrainzDialog
+        key={activeMatchTrack?.id ?? 'empty'}
         track={activeMatchTrack}
         onClose={() => setActiveMatchTrack(null)}
         onMatchSaved={handleMatchSaved}

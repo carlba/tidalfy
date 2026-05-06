@@ -39,6 +39,7 @@ const musicBrainzCandidateSchema = z.object({
   releaseTitle: z.string().nullable(),
   releaseDate: z.string().nullable(),
   releaseCountry: z.string().nullable(),
+  releaseStatus: z.string().nullable(),
   durationMs: z.number().nullable(),
   disambiguation: z.string().nullable(),
   score: z.number().nullable(),
@@ -59,7 +60,7 @@ export async function trackRoutes(app: FastifyInstance) {
       const { batchId } = request.query;
       const tracks = await prisma.track.findMany({
         where: batchId ? { batchId } : undefined,
-        orderBy: { trackName: 'asc' },
+        orderBy: [{ addedAt: 'desc' }, { trackName: 'asc' }],
         include: { match: true },
       });
       return tracks;
@@ -71,6 +72,11 @@ export async function trackRoutes(app: FastifyInstance) {
     {
       schema: {
         params: z.object({ id: z.string() }),
+        querystring: z.object({
+          includeAlbum: z.string().optional(),
+          albumName: z.string().optional(),
+          useScoreOnly: z.string().optional(),
+        }),
         response: {
           200: z.array(musicBrainzCandidateSchema),
           404: z.object({ error: z.string() }),
@@ -83,7 +89,17 @@ export async function trackRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: 'Track not found' });
       }
 
-      const candidates = await searchMusicBrainz(track.trackName, track.artistNames[0] ?? '');
+      const includeAlbum = request.query.includeAlbum === 'true';
+      const albumName = request.query.albumName?.trim() ?? undefined;
+      const useScoreOnly = request.query.useScoreOnly === 'true';
+      const candidates = await searchMusicBrainz(
+        track.trackName,
+        track.artistNames[0] ?? '',
+        albumName ?? track.albumName,
+        track.releaseDate,
+        includeAlbum,
+        useScoreOnly
+      );
       return candidates;
     }
   );

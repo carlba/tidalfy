@@ -32,8 +32,18 @@ export async function fetchTracks(batchId?: string): Promise<Track[]> {
   return handleResponse<Track[]>(response);
 }
 
-export async function searchMusicBrainz(trackId: string): Promise<MusicBrainzCandidate[]> {
-  const response = await fetch(`/api/tracks/${trackId}/musicbrainz`);
+export async function searchMusicBrainz(
+  trackId: string,
+  includeAlbum = false,
+  albumName = '',
+  useScoreOnly = false
+): Promise<MusicBrainzCandidate[]> {
+  const query = new URLSearchParams({
+    includeAlbum: String(includeAlbum),
+    albumName,
+    useScoreOnly: String(useScoreOnly),
+  });
+  const response = await fetch(`/api/tracks/${trackId}/musicbrainz?${query}`);
   return handleResponse<MusicBrainzCandidate[]>(response);
 }
 

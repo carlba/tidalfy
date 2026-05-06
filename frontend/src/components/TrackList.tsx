@@ -49,6 +49,7 @@ export function TrackList({ tracks, onSearchMatch }: TrackListProps) {
                 <Check className="h-3 w-3 text-success shrink-0" />
                 <span className="text-xs text-success truncate">
                   {track.match.title} — {track.match.artistCredit}
+                  {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
                 </span>
               </div>
             ) : (
