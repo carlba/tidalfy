@@ -20,6 +20,7 @@ const musicBrainzReleaseSchema = z.object({
   date: z.string().optional(),
   country: z.string().optional(),
   status: z.string().optional(),
+  barcode: z.string().optional(),
   'release-group': musicBrainzReleaseGroupSchema.optional(),
 });
 
@@ -43,6 +44,7 @@ export interface MusicBrainzCandidate {
   title: string;
   artistCredit: string;
   releaseId: string | null;
+  releaseBarcode: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   releaseCountry: string | null;
@@ -259,6 +261,7 @@ export async function searchMusicBrainz(
           artistCredit:
             recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
           releaseId: release.id,
+          releaseBarcode: release.barcode ?? null,
           releaseTitle: release.title,
           releaseDate: release.date ?? null,
           releaseCountry: release.country ?? null,

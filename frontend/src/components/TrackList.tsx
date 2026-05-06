@@ -59,6 +59,7 @@ export function TrackList({ tracks, onSearchMatch, onArchive, emptyMessage }: Tr
                 <span className="text-xs text-success truncate">
                   {track.match.title} — {track.match.artistCredit}
                   {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
+                  {track.match.releaseBarcode ? ` · UPC/EAN: ${track.match.releaseBarcode}` : ''}
                 </span>
               </div>
             ) : (

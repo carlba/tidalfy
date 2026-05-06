@@ -412,6 +412,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                             : ''}
                                         </p>
                                       )}
+                                      {candidate.releaseBarcode && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          UPC/EAN: {candidate.releaseBarcode}
+                                        </p>
+                                      )}
                                       {candidate.releaseType && (
                                         <p className="text-xs text-muted-foreground truncate">
                                           Type: {candidate.releaseType}
@@ -484,6 +489,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                   {group[0].releaseTitle}
                                   {group[0].releaseDate ? ` · ${group[0].releaseDate}` : ''}
                                   {group[0].releaseCountry ? ` · ${group[0].releaseCountry}` : ''}
+                                </p>
+                              )}
+                              {group[0].releaseBarcode && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  UPC/EAN: {group[0].releaseBarcode}
                                 </p>
                               )}
                               {group[0].releaseType && (

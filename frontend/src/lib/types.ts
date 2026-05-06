@@ -10,6 +10,7 @@ export interface MusicBrainzMatch {
   title: string;
   artistCredit: string;
   releaseId: string | null;
+  releaseBarcode: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   isrc: string | null;
@@ -40,6 +41,7 @@ export interface MusicBrainzCandidate {
   title: string;
   artistCredit: string;
   releaseId: string | null;
+  releaseBarcode: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   releaseCountry: string | null;
