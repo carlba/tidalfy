@@ -6,13 +6,20 @@ import { Button } from '@/components/ui/button';
 import { ImportUpload } from '@/components/ImportUpload';
 import { TrackList } from '@/components/TrackList';
 import { MusicBrainzDialog } from '@/components/MusicBrainzDialog';
-import { fetchBatches, fetchTracks } from '@/lib/api';
+import {
+  archiveTrack,
+  fetchBatches,
+  fetchTracks,
+  type TrackStatus,
+  unarchiveTrack,
+} from '@/lib/api';
 import type { ImportBatch, ImportResult, MusicBrainzCandidate, Track } from '@/lib/types';
 
 export function App() {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [trackStatus, setTrackStatus] = useState<TrackStatus>('active');
   const [activeMatchTrack, setActiveMatchTrack] = useState<Track | null>(null);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
   const [importErrors, setImportErrors] = useState<ImportResult['errors']>([]);
@@ -22,10 +29,10 @@ export function App() {
     fetchBatches().then(setBatches).catch(console.error);
   }, []);
 
-  async function loadTracks(batchId?: string) {
+  async function loadTracks(batchId?: string, status: TrackStatus = trackStatus) {
     setIsLoadingTracks(true);
     try {
-      const data = await fetchTracks(batchId);
+      const data = await fetchTracks(batchId, status);
       setTracks(data);
     } catch (err) {
       console.error(err);
@@ -38,6 +45,11 @@ export function App() {
     setSelectedBatchId(batchId);
     setShowImport(false);
     loadTracks(batchId);
+  }
+
+  function handleStatusChange(status: TrackStatus) {
+    setTrackStatus(status);
+    loadTracks(selectedBatchId ?? undefined, status);
   }
 
   function handleImportSuccess(result: ImportResult) {
@@ -59,6 +71,24 @@ export function App() {
           : t
       )
     );
+  }
+
+  async function handleArchiveTrack(track: Track) {
+    try {
+      if (track.archived) {
+        await unarchiveTrack(track.id);
+      } else {
+        await archiveTrack(track.id);
+      }
+
+      setTracks(prev =>
+        trackStatus === 'all'
+          ? prev.map(t => (t.id === track.id ? { ...t, archived: !t.archived } : t))
+          : prev.filter(t => t.id !== track.id)
+      );
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   const matchedCount = tracks.filter(t => t.match !== null).length;
@@ -133,6 +163,29 @@ export function App() {
               </Card>
             ) : (
               <>
+                {selectedBatchId !== null && (
+                  <div className="flex flex-wrap items-center gap-2 pb-3">
+                    <Button
+                      size="sm"
+                      variant={trackStatus === 'active' ? 'default' : 'outline'}
+                      onClick={() => handleStatusChange('active')}>
+                      Active
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={trackStatus === 'archived' ? 'default' : 'outline'}
+                      onClick={() => handleStatusChange('archived')}>
+                      Archived
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={trackStatus === 'all' ? 'default' : 'outline'}
+                      onClick={() => handleStatusChange('all')}>
+                      All
+                    </Button>
+                  </div>
+                )}
+
                 {selectedBatchId !== null && tracks.length > 0 && (
                   <div className="flex items-center gap-3 flex-wrap">
                     <Badge variant="secondary">{tracks.length} tracks</Badge>
@@ -173,7 +226,18 @@ export function App() {
                         Loading tracks…
                       </div>
                     ) : (
-                      <TrackList tracks={tracks} onSearchMatch={setActiveMatchTrack} />
+                      <TrackList
+                        tracks={tracks}
+                        onSearchMatch={setActiveMatchTrack}
+                        onArchive={handleArchiveTrack}
+                        emptyMessage={
+                          trackStatus === 'archived'
+                            ? 'No archived tracks yet.'
+                            : trackStatus === 'all'
+                              ? 'No tracks found.'
+                              : 'No active tracks yet.'
+                        }
+                      />
                     )}
                   </CardContent>
                 </Card>

@@ -35,6 +35,7 @@ model Track {
   addedAt     DateTime?         @map("added_at")
   genres      String[]          @map("genres")
   recordLabel String?           @map("record_label")
+  archived    Boolean           @default(false) @map("archived")
   rawData     Json              @map("raw_data")
   match       MusicBrainzMatch? @relation(name: "TrackMatch")
 

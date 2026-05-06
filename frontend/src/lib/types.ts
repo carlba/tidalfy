@@ -29,6 +29,7 @@ export interface Track {
   addedAt: string | null;
   genres: string[];
   recordLabel: string | null;
+  archived: boolean;
   match: MusicBrainzMatch | null;
 }
 

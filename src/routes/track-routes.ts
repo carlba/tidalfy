@@ -19,6 +19,7 @@ const trackSchema = z.object({
   addedAt: z.date().nullable(),
   genres: z.array(z.string()),
   recordLabel: z.string().nullable(),
+  archived: z.boolean(),
   match: z
     .object({
       mbid: z.string(),
@@ -52,14 +53,21 @@ export async function trackRoutes(app: FastifyInstance) {
     '/api/tracks',
     {
       schema: {
-        querystring: z.object({ batchId: z.string().optional() }),
+        querystring: z.object({
+          batchId: z.string().optional(),
+          status: z.enum(['active', 'archived', 'all']).optional(),
+        }),
         response: { 200: z.array(trackSchema) },
       },
     },
     async request => {
-      const { batchId } = request.query;
+      const { batchId, status } = request.query;
+      const archivedFilter = status === 'archived' ? true : status === 'all' ? undefined : false;
       const tracks = await prisma.track.findMany({
-        where: batchId ? { batchId } : undefined,
+        where: {
+          archived: archivedFilter,
+          batchId: batchId ?? undefined,
+        },
         orderBy: [{ addedAt: 'desc' }, { trackName: 'asc' }],
         include: { match: true },
       });
@@ -146,6 +154,34 @@ export async function trackRoutes(app: FastifyInstance) {
       });
 
       return match;
+    }
+  );
+
+  server.patch(
+    '/api/tracks/:id/archive',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: z.object({ archived: z.boolean().optional() }).optional(),
+        response: {
+          200: z.object({ id: z.string(), archived: z.boolean() }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const track = await prisma.track.findUnique({ where: { id: request.params.id } });
+      if (!track) {
+        return reply.status(404).send({ error: 'Track not found' });
+      }
+
+      const archived = request.body?.archived ?? true;
+      const updatedTrack = await prisma.track.update({
+        where: { id: request.params.id },
+        data: { archived },
+      });
+
+      return { id: updatedTrack.id, archived: updatedTrack.archived };
     }
   );
 }

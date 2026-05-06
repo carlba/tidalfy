@@ -26,8 +26,17 @@ export async function uploadCsv(file: File): Promise<ImportResult> {
   return handleResponse<ImportResult>(response);
 }
 
-export async function fetchTracks(batchId?: string): Promise<Track[]> {
-  const url = batchId ? `/api/tracks?batchId=${batchId}` : '/api/tracks';
+export type TrackStatus = 'active' | 'archived' | 'all';
+
+export async function fetchTracks(
+  batchId?: string,
+  status: TrackStatus = 'active'
+): Promise<Track[]> {
+  const params = new URLSearchParams();
+  if (batchId) params.set('batchId', batchId);
+  if (status !== 'active') params.set('status', status);
+  const query = params.toString();
+  const url = query ? `/api/tracks?${query}` : '/api/tracks';
   const response = await fetch(url);
   return handleResponse<Track[]>(response);
 }
@@ -64,4 +73,21 @@ export async function saveMatch(
     }),
   });
   return handleResponse<MusicBrainzMatch>(response);
+}
+
+async function setTrackArchived(trackId: string, archived: boolean): Promise<void> {
+  const response = await fetch(`/api/tracks/${trackId}/archive`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ archived }),
+  });
+  await handleResponse<void>(response);
+}
+
+export async function archiveTrack(trackId: string): Promise<void> {
+  return setTrackArchived(trackId, true);
+}
+
+export async function unarchiveTrack(trackId: string): Promise<void> {
+  return setTrackArchived(trackId, false);
 }

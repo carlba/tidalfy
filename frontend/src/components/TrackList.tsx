@@ -1,4 +1,4 @@
-import { Music2, Check, AlertCircle } from 'lucide-react';
+import { Music2, Check, AlertCircle, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Track } from '@/lib/types';
@@ -6,6 +6,8 @@ import type { Track } from '@/lib/types';
 interface TrackListProps {
   tracks: Track[];
   onSearchMatch: (track: Track) => void;
+  onArchive: (track: Track) => void;
+  emptyMessage?: string;
 }
 
 function formatDuration(ms: number): string {
@@ -15,12 +17,14 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export function TrackList({ tracks, onSearchMatch }: TrackListProps) {
+export function TrackList({ tracks, onSearchMatch, onArchive, emptyMessage }: TrackListProps) {
   if (tracks.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <Music2 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-        <p className="text-sm">No tracks imported yet. Upload a Spotify CSV to get started.</p>
+        <p className="text-sm">
+          {emptyMessage ?? 'No tracks imported yet. Upload a Spotify CSV to get started.'}
+        </p>
       </div>
     );
   }
@@ -37,6 +41,11 @@ export function TrackList({ tracks, onSearchMatch }: TrackListProps) {
               {track.explicit && (
                 <Badge variant="outline" className="text-xs px-1 py-0 shrink-0">
                   E
+                </Badge>
+              )}
+              {track.archived && (
+                <Badge variant="secondary" className="text-xs px-1 py-0 shrink-0">
+                  Archived
                 </Badge>
               )}
             </div>
@@ -64,6 +73,14 @@ export function TrackList({ tracks, onSearchMatch }: TrackListProps) {
             <span className="text-xs text-muted-foreground hidden sm:block">
               {formatDuration(track.durationMs)}
             </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-amber-600"
+              onClick={() => onArchive(track)}>
+              <Archive className="h-3.5 w-3.5 mr-1" />
+              {track.archived ? 'Unarchive' : 'Archive'}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => onSearchMatch(track)}>
               {track.match ? 'Change' : 'Match'}
             </Button>
