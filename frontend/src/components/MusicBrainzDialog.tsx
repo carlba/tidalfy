@@ -44,6 +44,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
   const [useScoreOnly, setUseScoreOnly] = useState(false);
+  const [officialOnly, setOfficialOnly] = useState(true);
   const [typeFilter, setTypeFilter] = useState('Album');
   const [typeFilterReversed, setTypeFilterReversed] = useState(false);
   const [typeFilterExact, setTypeFilterExact] = useState(true);
@@ -132,8 +133,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
 
       const typePass = typeFilterReversed ? !typeMatches : typeMatches;
       const secondaryPass = secondaryTypeFilterReversed ? !secondaryMatches : secondaryMatches;
+      const officialPass = officialOnly
+        ? candidate.releaseStatus?.toLowerCase() === 'official'
+        : true;
 
-      return typePass && secondaryPass;
+      return typePass && secondaryPass && officialPass;
     });
   }, [
     candidates,
@@ -143,6 +147,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
     secondaryTypeFilter,
     secondaryTypeFilterReversed,
     secondaryTypeFilterExact,
+    officialOnly,
   ]);
 
   function toggleGroup(mbid: string) {
@@ -213,6 +218,15 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                   className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
                 />
                 <span className="font-medium">Sort by MusicBrainz score only</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={officialOnly}
+                  onChange={event => setOfficialOnly(event.target.checked)}
+                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+                />
+                <span className="font-medium">Official release only</span>
               </label>
               <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
                 {useScoreOnly ? 'Score-only sorting' : 'Custom ranking'}
