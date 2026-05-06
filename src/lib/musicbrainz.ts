@@ -352,6 +352,10 @@ export async function searchMusicBrainz(
             recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
           releaseId: release.id,
           releaseBarcode: release.barcode ?? metadata?.barcode ?? null,
+          releaseCoverArtUrl:
+            release['cover-art-archive']?.front || metadata?.hasCoverArt
+              ? `https://coverartarchive.org/release/${release.id}/front`
+              : null,
           releasePackaging: release.packaging ?? metadata?.packaging ?? null,
           releaseAsin: release.asin ?? metadata?.asin ?? null,
           releaseHasCoverArt: metadata?.hasCoverArt ?? false,

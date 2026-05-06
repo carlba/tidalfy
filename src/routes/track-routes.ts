@@ -43,6 +43,7 @@ const musicBrainzCandidateSchema = z.object({
   artistCredit: z.string(),
   releaseId: z.string().nullable(),
   releaseBarcode: z.string().nullable(),
+  releaseCoverArtUrl: z.string().nullable(),
   releasePackaging: z.string().nullable(),
   releaseAsin: z.string().nullable(),
   releaseHasCoverArt: z.boolean(),

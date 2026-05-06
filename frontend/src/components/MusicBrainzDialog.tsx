@@ -406,87 +406,96 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                   <li
                                     key={`${candidate.mbid}-${candidate.releaseTitle ?? ''}-${candidate.releaseDate ?? ''}-${candidate.releaseCountry ?? ''}`}
                                     className="flex items-start justify-between gap-3 p-3 pl-10 hover:bg-muted/50 transition-colors">
-                                    <div className="min-w-0 flex-1">
-                                      <p className="font-medium text-sm truncate">
-                                        {candidate.title}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {candidate.artistCredit}
-                                      </p>
-                                      <p className="text-[11px] text-muted-foreground truncate">
-                                        MBID: {candidate.mbid}
-                                      </p>
-                                      {candidate.isrc && (
+                                    <div className="min-w-0 flex-1 flex gap-3">
+                                      {candidate.releaseCoverArtUrl && (
+                                        <img
+                                          src={candidate.releaseCoverArtUrl}
+                                          alt={`${candidate.releaseTitle ?? 'Release'} cover art`}
+                                          className="h-20 w-20 rounded-md object-cover"
+                                        />
+                                      )}
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-medium text-sm truncate">
+                                          {candidate.title}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {candidate.artistCredit}
+                                        </p>
                                         <p className="text-[11px] text-muted-foreground truncate">
-                                          ISRC: {candidate.isrc}
+                                          MBID: {candidate.mbid}
                                         </p>
-                                      )}
-                                      {candidate.releaseTitle && (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          {candidate.releaseTitle}
-                                          {candidate.releaseDate
-                                            ? ` · ${candidate.releaseDate}`
-                                            : ''}
-                                          {candidate.releaseCountry
-                                            ? ` · ${candidate.releaseCountry}`
-                                            : ''}
-                                        </p>
-                                      )}
-                                      {candidate.releaseBarcode && (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          UPC/EAN: {candidate.releaseBarcode}
-                                        </p>
-                                      )}
-                                      {candidate.releasePackaging && (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          Packaging: {candidate.releasePackaging}
-                                        </p>
-                                      )}
-                                      {candidate.releaseAsin && (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          ASIN: {candidate.releaseAsin}
-                                        </p>
-                                      )}
-                                      {candidate.releaseHasCoverArt && (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          Cover art available
-                                        </p>
-                                      )}
-                                      {candidate.releaseType && (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          Type: {candidate.releaseType}
-                                        </p>
-                                      )}
-                                      {candidate.releaseSecondaryTypes?.length ? (
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          Secondary: {candidate.releaseSecondaryTypes.join(', ')}
-                                        </p>
-                                      ) : null}
-                                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                                        {candidate.durationMs !== null && (
-                                          <Badge variant="outline" className="text-xs px-1 py-0">
-                                            {formatDuration(candidate.durationMs)}
-                                          </Badge>
+                                        {candidate.isrc && (
+                                          <p className="text-[11px] text-muted-foreground truncate">
+                                            ISRC: {candidate.isrc}
+                                          </p>
                                         )}
-                                        {candidate.releaseCountry && (
-                                          <Badge variant="outline" className="text-xs px-1 py-0">
-                                            {candidate.releaseCountry}
-                                          </Badge>
+                                        {candidate.releaseTitle && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            {candidate.releaseTitle}
+                                            {candidate.releaseDate
+                                              ? ` · ${candidate.releaseDate}`
+                                              : ''}
+                                            {candidate.releaseCountry
+                                              ? ` · ${candidate.releaseCountry}`
+                                              : ''}
+                                          </p>
                                         )}
-                                        {candidate.disambiguation && (
-                                          <span className="text-[10px] text-muted-foreground italic">
-                                            {candidate.disambiguation}
-                                          </span>
+                                        {candidate.releaseBarcode && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            UPC/EAN: {candidate.releaseBarcode}
+                                          </p>
                                         )}
-                                        {candidate.score !== null && (
-                                          <Badge
-                                            variant={
-                                              candidate.score >= 90 ? 'success' : 'secondary'
-                                            }
-                                            className="text-xs px-1 py-0">
-                                            Score: {candidate.score}
-                                          </Badge>
+                                        {candidate.releasePackaging && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            Packaging: {candidate.releasePackaging}
+                                          </p>
                                         )}
+                                        {candidate.releaseAsin && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            ASIN: {candidate.releaseAsin}
+                                          </p>
+                                        )}
+                                        {candidate.releaseHasCoverArt && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            Cover art available
+                                          </p>
+                                        )}
+                                        {candidate.releaseType && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            Type: {candidate.releaseType}
+                                          </p>
+                                        )}
+                                        {candidate.releaseSecondaryTypes?.length ? (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            Secondary: {candidate.releaseSecondaryTypes.join(', ')}
+                                          </p>
+                                        ) : null}
+                                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                                          {candidate.durationMs !== null && (
+                                            <Badge variant="outline" className="text-xs px-1 py-0">
+                                              {formatDuration(candidate.durationMs)}
+                                            </Badge>
+                                          )}
+                                          {candidate.releaseCountry && (
+                                            <Badge variant="outline" className="text-xs px-1 py-0">
+                                              {candidate.releaseCountry}
+                                            </Badge>
+                                          )}
+                                          {candidate.disambiguation && (
+                                            <span className="text-[10px] text-muted-foreground italic">
+                                              {candidate.disambiguation}
+                                            </span>
+                                          )}
+                                          {candidate.score !== null && (
+                                            <Badge
+                                              variant={
+                                                candidate.score >= 90 ? 'success' : 'secondary'
+                                              }
+                                              className="text-xs px-1 py-0">
+                                              Score: {candidate.score}
+                                            </Badge>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                     <Button
