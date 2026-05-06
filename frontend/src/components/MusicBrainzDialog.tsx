@@ -9,7 +9,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { searchMusicBrainz, saveMatch } from '@/lib/api';
+import { formatDuration } from '@/lib/utils';
 import type { MusicBrainzCandidate, Track } from '@/lib/types';
 
 interface MusicBrainzDialogProps {
@@ -55,13 +57,6 @@ function getMostCommonReleaseTitle(candidates: MusicBrainzCandidate[]): string |
   return Array.from(releaseTitleCounts.entries()).reduce((best, current) => {
     return current[1] > best[1] ? current : best;
   })[0];
-}
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzDialogProps) {
@@ -217,12 +212,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
             </p>
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium">Spotify album</span>
-              <input
+              <Input
                 type="text"
                 value={albumFilterValue}
                 onChange={event => setAlbumFilter(event.target.value)}
                 placeholder="Type album name to filter results"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </label>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
@@ -275,12 +269,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                     </button>
                   </div>
                 </span>
-                <input
+                <Input
                   type="text"
                   value={typeFilter}
                   onChange={event => setTypeFilter(event.target.value)}
                   placeholder="Filter release type (or NULL)"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </label>
               <label className="flex flex-col gap-2 text-sm">
@@ -309,12 +302,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                     </button>
                   </div>
                 </span>
-                <input
+                <Input
                   type="text"
                   value={secondaryTypeFilter}
                   onChange={event => setSecondaryTypeFilter(event.target.value)}
                   placeholder="Filter secondary type (or NULL)"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </label>
             </div>
