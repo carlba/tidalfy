@@ -70,6 +70,7 @@ export async function saveMatch(
       releaseId: candidate.releaseId,
       releaseTitle: candidate.releaseTitle,
       releaseDate: candidate.releaseDate,
+      isrc: candidate.isrc,
       score: candidate.score,
     }),
   });

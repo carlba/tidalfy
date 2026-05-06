@@ -28,6 +28,7 @@ const trackSchema = z.object({
       releaseId: z.string().nullable(),
       releaseTitle: z.string().nullable(),
       releaseDate: z.string().nullable(),
+      isrc: z.string().nullable(),
       score: z.number().nullable(),
       selectedAt: z.date(),
     })
@@ -47,6 +48,7 @@ const musicBrainzCandidateSchema = z.object({
   releaseSecondaryTypes: z.array(z.string()).optional(),
   durationMs: z.number().nullable(),
   disambiguation: z.string().nullable(),
+  isrc: z.string().nullable(),
   score: z.number().nullable(),
 });
 
@@ -128,6 +130,7 @@ export async function trackRoutes(app: FastifyInstance) {
           releaseId: z.string().nullable(),
           releaseTitle: z.string().nullable(),
           releaseDate: z.string().nullable(),
+          isrc: z.string().nullable(),
           releaseType: z.string().nullable().optional(),
           releaseSecondaryTypes: z.array(z.string()).optional(),
           score: z.number().nullable(),
@@ -142,6 +145,7 @@ export async function trackRoutes(app: FastifyInstance) {
             releaseId: z.string().nullable(),
             releaseTitle: z.string().nullable(),
             releaseDate: z.string().nullable(),
+            isrc: z.string().nullable(),
             score: z.number().nullable(),
             selectedAt: z.date(),
           }),

@@ -31,6 +31,7 @@ const musicBrainzRecordingSchema = z.object({
   disambiguation: z.string().optional(),
   'artist-credit': z.array(musicBrainzArtistCreditSchema).optional(),
   releases: z.array(musicBrainzReleaseSchema).optional(),
+  isrcs: z.array(z.string()).optional(),
 });
 
 const musicBrainzSearchResponseSchema = z.object({
@@ -50,6 +51,7 @@ export interface MusicBrainzCandidate {
   releaseSecondaryTypes: string[];
   durationMs: number | null;
   disambiguation: string | null;
+  isrc: string | null;
   score: number | null;
 }
 
@@ -209,7 +211,7 @@ export async function searchMusicBrainz(
   async function runSearch(query: string) {
     const response = await mbClient
       .get('recording', {
-        searchParams: { query, limit: 100, fmt: 'json', inc: 'releases+release-groups' },
+        searchParams: { query, limit: 100, fmt: 'json', inc: 'releases+release-groups+isrcs' },
       })
       .json<unknown>();
 
@@ -243,6 +245,7 @@ export async function searchMusicBrainz(
           releaseSecondaryTypes,
           durationMs: recording.length ?? null,
           disambiguation: recording.disambiguation ?? null,
+          isrc: recording.isrcs?.[0] ?? null,
           score: recording.score ?? null,
         };
       });

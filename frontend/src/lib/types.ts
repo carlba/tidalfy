@@ -12,6 +12,7 @@ export interface MusicBrainzMatch {
   releaseId: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
+  isrc: string | null;
   score: number | null;
   selectedAt: string;
 }
@@ -38,11 +39,14 @@ export interface MusicBrainzCandidate {
   mbid: string;
   title: string;
   artistCredit: string;
+  releaseId: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   releaseCountry: string | null;
   releaseStatus: string | null;
   releaseType: string | null;
+  releaseSecondaryTypes: string[];
+  isrc: string | null;
   durationMs: number | null;
   disambiguation: string | null;
   score: number | null;

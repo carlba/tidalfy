@@ -396,6 +396,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                       <p className="text-[11px] text-muted-foreground truncate">
                                         MBID: {candidate.mbid}
                                       </p>
+                                      {candidate.isrc && (
+                                        <p className="text-[11px] text-muted-foreground truncate">
+                                          ISRC: {candidate.isrc}
+                                        </p>
+                                      )}
                                       {candidate.releaseTitle && (
                                         <p className="text-xs text-muted-foreground truncate">
                                           {candidate.releaseTitle}
@@ -469,6 +474,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                               <p className="text-[11px] text-muted-foreground truncate">
                                 MBID: {group[0].mbid}
                               </p>
+                              {group[0].isrc && (
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  ISRC: {group[0].isrc}
+                                </p>
+                              )}
                               {group[0].releaseTitle && (
                                 <p className="text-xs text-muted-foreground truncate">
                                   {group[0].releaseTitle}
