@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Music, Loader2, Check, ChevronDown } from 'lucide-react';
 import {
   Dialog,
@@ -73,6 +73,12 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
   const [useScoreOnly, setUseScoreOnly] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('Album');
+  const [typeFilterReversed, setTypeFilterReversed] = useState(false);
+  const [typeFilterExact, setTypeFilterExact] = useState(true);
+  const [secondaryTypeFilter, setSecondaryTypeFilter] = useState('NULL');
+  const [secondaryTypeFilterReversed, setSecondaryTypeFilterReversed] = useState(false);
+  const [secondaryTypeFilterExact, setSecondaryTypeFilterExact] = useState(false);
   const [expandedMbids, setExpandedMbids] = useState<Set<string>>(new Set());
 
   const albumFilterValue = albumFilter ?? track?.albumName ?? '';
@@ -118,9 +124,55 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setCandidates([]);
       setHasSearched(false);
       setSearchError(null);
+      setTypeFilter('Album');
+      setTypeFilterReversed(false);
+      setTypeFilterExact(true);
+      setSecondaryTypeFilter('NULL');
+      setSecondaryTypeFilterReversed(false);
+      setSecondaryTypeFilterExact(false);
       setExpandedMbids(new Set());
     }
   }
+
+  const filteredCandidates = useMemo(() => {
+    const normalizedTypeFilter = typeFilter.trim().toLowerCase();
+    const normalizedSecondaryTypeFilter = secondaryTypeFilter.trim().toLowerCase();
+    const isNullTypeFilter = normalizedTypeFilter === 'null';
+    const isNullSecondaryFilter = normalizedSecondaryTypeFilter === 'null';
+
+    return candidates.filter(candidate => {
+      const releaseType = candidate.releaseType?.toLowerCase() ?? '';
+      const secondaryTypes = candidate.releaseSecondaryTypes?.map(type => type.toLowerCase()) ?? [];
+
+      const typeMatches = normalizedTypeFilter
+        ? isNullTypeFilter
+          ? releaseType === ''
+          : typeFilterExact
+          ? releaseType === normalizedTypeFilter
+          : releaseType.includes(normalizedTypeFilter)
+        : true;
+      const secondaryMatches = normalizedSecondaryTypeFilter
+        ? isNullSecondaryFilter
+          ? secondaryTypes.length === 0
+          : secondaryTypeFilterExact
+          ? secondaryTypes.some(type => type === normalizedSecondaryTypeFilter)
+          : secondaryTypes.some(type => type.includes(normalizedSecondaryTypeFilter))
+        : true;
+
+      const typePass = typeFilterReversed ? !typeMatches : typeMatches;
+      const secondaryPass = secondaryTypeFilterReversed ? !secondaryMatches : secondaryMatches;
+
+      return typePass && secondaryPass;
+    });
+  }, [
+    candidates,
+    typeFilter,
+    typeFilterReversed,
+    typeFilterExact,
+    secondaryTypeFilter,
+    secondaryTypeFilterReversed,
+    secondaryTypeFilterExact,
+  ]);
 
   function toggleGroup(mbid: string) {
     setExpandedMbids(current => {
@@ -196,6 +248,76 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 {useScoreOnly ? 'Score-only sorting' : 'Custom ranking'}
               </span>
             </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="flex items-center justify-between gap-2 font-medium">
+                  <span>Release type</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTypeFilterExact(current => !current)}
+                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
+                        typeFilterExact
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted/10 text-foreground'
+                      }`}>
+                      Exact
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTypeFilterReversed(current => !current)}
+                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
+                        typeFilterReversed
+                          ? 'border-destructive bg-destructive/10 text-destructive'
+                          : 'border-border bg-muted/10 text-foreground'
+                      }`}>
+                      {typeFilterReversed ? 'Exclude' : 'Include'}
+                    </button>
+                  </div>
+                </span>
+                <input
+                  type="text"
+                  value={typeFilter}
+                  onChange={event => setTypeFilter(event.target.value)}
+                  placeholder="Filter release type (or NULL)"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="flex items-center justify-between gap-2 font-medium">
+                  <span>Secondary type</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSecondaryTypeFilterExact(current => !current)}
+                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
+                        secondaryTypeFilterExact
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted/10 text-foreground'
+                      }`}>
+                      Exact
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSecondaryTypeFilterReversed(current => !current)}
+                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
+                        secondaryTypeFilterReversed
+                          ? 'border-destructive bg-destructive/10 text-destructive'
+                          : 'border-border bg-muted/10 text-foreground'
+                      }`}>
+                      {secondaryTypeFilterReversed ? 'Exclude' : 'Include'}
+                    </button>
+                  </div>
+                </span>
+                <input
+                  type="text"
+                  value={secondaryTypeFilter}
+                  onChange={event => setSecondaryTypeFilter(event.target.value)}
+                  placeholder="Filter secondary type (or NULL)"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </label>
+            </div>
             <Button
               className="mt-1"
               onClick={handleSearch}
@@ -227,7 +349,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
             <div className="flex flex-col overflow-hidden rounded-lg border">
               <div className="overflow-y-auto max-h-[45vh] min-h-0">
                 <ul className="divide-y divide-border">
-                  {groupCandidatesByMbid(candidates).map(([mbid, group]) => {
+                  {groupCandidatesByMbid(filteredCandidates).map(([mbid, group]) => {
                     const isExpanded = expandedMbids.has(mbid);
                     const releaseTitle = getMostCommonReleaseTitle(group);
 
