@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ImportUpload } from '@/components/ImportUpload';
 import { TrackList } from '@/components/TrackList';
 import { MusicBrainzDialog } from '@/components/MusicBrainzDialog';
+import { BatchList } from '@/components/BatchList';
+import { StatusTabs } from '@/components/StatusTabs';
 import {
   archiveTrack,
   fetchBatches,
@@ -125,28 +127,11 @@ export function App() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {batches.length === 0 ? (
-                  <p className="text-sm text-muted-foreground px-4 pb-4">No imports yet.</p>
-                ) : (
-                  <ul className="divide-y divide-border">
-                    {batches.map(batch => (
-                      <li key={batch.id}>
-                        <button
-                          className={
-                            'w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors ' +
-                            (selectedBatchId === batch.id ? 'bg-muted font-medium' : '')
-                          }
-                          onClick={() => handleBatchSelect(batch.id)}>
-                          <p className="text-sm truncate">{batch.fileName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {batch.trackCount} tracks &middot;{' '}
-                            {new Date(batch.importedAt).toLocaleDateString()}
-                          </p>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <BatchList
+                  batches={batches}
+                  selectedBatchId={selectedBatchId}
+                  onSelect={handleBatchSelect}
+                />
               </CardContent>
             </Card>
           </aside>
@@ -164,26 +149,7 @@ export function App() {
             ) : (
               <>
                 {selectedBatchId !== null && (
-                  <div className="flex flex-wrap items-center gap-2 pb-3">
-                    <Button
-                      size="sm"
-                      variant={trackStatus === 'active' ? 'default' : 'outline'}
-                      onClick={() => handleStatusChange('active')}>
-                      Active
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={trackStatus === 'archived' ? 'default' : 'outline'}
-                      onClick={() => handleStatusChange('archived')}>
-                      Archived
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={trackStatus === 'all' ? 'default' : 'outline'}
-                      onClick={() => handleStatusChange('all')}>
-                      All
-                    </Button>
-                  </div>
+                  <StatusTabs value={trackStatus} onChange={handleStatusChange} />
                 )}
 
                 {selectedBatchId !== null && tracks.length > 0 && (

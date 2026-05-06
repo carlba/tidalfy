@@ -11,6 +11,7 @@ export interface MusicBrainzMatch {
   artistCredit: string;
   releaseId: string | null;
   releaseBarcode: string | null;
+  releaseAsin: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   isrc: string | null;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Music, Loader2, Check, ChevronDown } from 'lucide-react';
+import { Music, Loader2, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,10 +8,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { MusicBrainzCandidateGroup } from '@/components/MusicBrainzCandidateGroup';
 import { searchMusicBrainz, saveMatch } from '@/lib/api';
-import { formatDuration } from '@/lib/utils';
 import type { MusicBrainzCandidate, Track } from '@/lib/types';
 
 interface MusicBrainzDialogProps {
@@ -34,29 +33,6 @@ function groupCandidatesByMbid(candidates: MusicBrainzCandidate[]) {
       }, new Map())
       .entries()
   );
-}
-
-function getMostCommonReleaseTitle(candidates: MusicBrainzCandidate[]): string | null {
-  const releaseTitleCounts = new Map<string, number>();
-
-  for (const candidate of candidates) {
-    if (!candidate.releaseTitle) {
-      continue;
-    }
-
-    releaseTitleCounts.set(
-      candidate.releaseTitle,
-      (releaseTitleCounts.get(candidate.releaseTitle) ?? 0) + 1
-    );
-  }
-
-  if (releaseTitleCounts.size === 0) {
-    return null;
-  }
-
-  return Array.from(releaseTitleCounts.entries()).reduce((best, current) => {
-    return current[1] > best[1] ? current : best;
-  })[0];
 }
 
 export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzDialogProps) {
@@ -343,258 +319,16 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 <ul className="divide-y divide-border">
                   {groupCandidatesByMbid(filteredCandidates).map(([mbid, group]) => {
                     const isExpanded = expandedMbids.has(mbid);
-                    const releaseTitle = getMostCommonReleaseTitle(group);
 
                     return (
-                      <li key={mbid} className="border-b last:border-b-0">
-                        {group.length > 1 ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => toggleGroup(mbid)}
-                              className="flex w-full items-center justify-between gap-3 p-3 bg-muted/10 text-sm font-semibold text-foreground"
-                              aria-expanded={isExpanded}>
-                              <div className="min-w-0 text-left">
-                                <p className="truncate">{group[0].title}</p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {group[0].artistCredit}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground truncate">
-                                  MBID: {mbid} · {group.length} results
-                                </p>
-                                {releaseTitle && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    Release: {releaseTitle}
-                                  </p>
-                                )}
-                                {group[0].releaseBarcode && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    UPC/EAN: {group[0].releaseBarcode}
-                                  </p>
-                                )}
-                                {group[0].releasePackaging && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    Packaging: {group[0].releasePackaging}
-                                  </p>
-                                )}
-                                {group[0].releaseAsin && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    ASIN: {group[0].releaseAsin}
-                                  </p>
-                                )}
-                                {group[0].releaseHasCoverArt && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    Cover art available
-                                  </p>
-                                )}
-                              </div>
-                              <ChevronDown
-                                className={`h-4 w-4 transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-                              />
-                            </button>
-                            {isExpanded && (
-                              <ul className="divide-y divide-border">
-                                {group.map(candidate => (
-                                  <li
-                                    key={`${candidate.mbid}-${candidate.releaseTitle ?? ''}-${candidate.releaseDate ?? ''}-${candidate.releaseCountry ?? ''}`}
-                                    className="flex items-start justify-between gap-3 p-3 pl-10 hover:bg-muted/50 transition-colors">
-                                    <div className="min-w-0 flex-1 flex gap-3">
-                                      {candidate.releaseCoverArtUrl && (
-                                        <img
-                                          src={candidate.releaseCoverArtUrl}
-                                          alt={`${candidate.releaseTitle ?? 'Release'} cover art`}
-                                          className="h-20 w-20 rounded-md object-cover"
-                                        />
-                                      )}
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-medium text-sm truncate">
-                                          {candidate.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {candidate.artistCredit}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground truncate">
-                                          MBID: {candidate.mbid}
-                                        </p>
-                                        {candidate.isrc && (
-                                          <p className="text-[11px] text-muted-foreground truncate">
-                                            ISRC: {candidate.isrc}
-                                          </p>
-                                        )}
-                                        {candidate.releaseTitle && (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            {candidate.releaseTitle}
-                                            {candidate.releaseDate
-                                              ? ` · ${candidate.releaseDate}`
-                                              : ''}
-                                            {candidate.releaseCountry
-                                              ? ` · ${candidate.releaseCountry}`
-                                              : ''}
-                                          </p>
-                                        )}
-                                        {candidate.releaseBarcode && (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            UPC/EAN: {candidate.releaseBarcode}
-                                          </p>
-                                        )}
-                                        {candidate.releasePackaging && (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            Packaging: {candidate.releasePackaging}
-                                          </p>
-                                        )}
-                                        {candidate.releaseAsin && (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            ASIN: {candidate.releaseAsin}
-                                          </p>
-                                        )}
-                                        {candidate.releaseHasCoverArt && (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            Cover art available
-                                          </p>
-                                        )}
-                                        {candidate.releaseType && (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            Type: {candidate.releaseType}
-                                          </p>
-                                        )}
-                                        {candidate.releaseSecondaryTypes?.length ? (
-                                          <p className="text-xs text-muted-foreground truncate">
-                                            Secondary: {candidate.releaseSecondaryTypes.join(', ')}
-                                          </p>
-                                        ) : null}
-                                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                                          {candidate.durationMs !== null && (
-                                            <Badge variant="outline" className="text-xs px-1 py-0">
-                                              {formatDuration(candidate.durationMs)}
-                                            </Badge>
-                                          )}
-                                          {candidate.releaseCountry && (
-                                            <Badge variant="outline" className="text-xs px-1 py-0">
-                                              {candidate.releaseCountry}
-                                            </Badge>
-                                          )}
-                                          {candidate.disambiguation && (
-                                            <span className="text-[10px] text-muted-foreground italic">
-                                              {candidate.disambiguation}
-                                            </span>
-                                          )}
-                                          {candidate.score !== null && (
-                                            <Badge
-                                              variant={
-                                                candidate.score >= 90 ? 'success' : 'secondary'
-                                              }
-                                              className="text-xs px-1 py-0">
-                                              Score: {candidate.score}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleSelect(candidate)}
-                                      disabled={savingMbid !== null}>
-                                      {savingMbid === candidate.mbid ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        'Select'
-                                      )}
-                                    </Button>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </>
-                        ) : (
-                          <div className="flex items-start justify-between gap-3 p-3 hover:bg-muted/50 transition-colors">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm truncate">{group[0].title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {group[0].artistCredit}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground truncate">
-                                MBID: {group[0].mbid}
-                              </p>
-                              {group[0].isrc && (
-                                <p className="text-[11px] text-muted-foreground truncate">
-                                  ISRC: {group[0].isrc}
-                                </p>
-                              )}
-                              {group[0].releaseTitle && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {group[0].releaseTitle}
-                                  {group[0].releaseDate ? ` · ${group[0].releaseDate}` : ''}
-                                  {group[0].releaseCountry ? ` · ${group[0].releaseCountry}` : ''}
-                                </p>
-                              )}
-                              {group[0].releaseBarcode && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  UPC/EAN: {group[0].releaseBarcode}
-                                </p>
-                              )}
-                              {group[0].releasePackaging && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  Packaging: {group[0].releasePackaging}
-                                </p>
-                              )}
-                              {group[0].releaseAsin && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  ASIN: {group[0].releaseAsin}
-                                </p>
-                              )}
-                              {group[0].releaseHasCoverArt && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  Cover art available
-                                </p>
-                              )}
-                              {group[0].releaseType && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  Type: {group[0].releaseType}
-                                </p>
-                              )}
-                              {group[0].releaseSecondaryTypes?.length ? (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  Secondary: {group[0].releaseSecondaryTypes.join(', ')}
-                                </p>
-                              ) : null}
-                              <div className="mt-2 flex flex-wrap items-center gap-2">
-                                {group[0].durationMs !== null && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0">
-                                    {formatDuration(group[0].durationMs)}
-                                  </Badge>
-                                )}
-                                {group[0].releaseCountry && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0">
-                                    {group[0].releaseCountry}
-                                  </Badge>
-                                )}
-                                {group[0].disambiguation && (
-                                  <span className="text-[10px] text-muted-foreground italic">
-                                    {group[0].disambiguation}
-                                  </span>
-                                )}
-                                {group[0].score !== null && (
-                                  <Badge
-                                    variant={group[0].score >= 90 ? 'success' : 'secondary'}
-                                    className="text-xs px-1 py-0">
-                                    Score: {group[0].score}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleSelect(group[0])}
-                              disabled={savingMbid !== null}>
-                              {savingMbid === group[0].mbid ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                'Select'
-                              )}
-                            </Button>
-                          </div>
-                        )}
-                      </li>
+                      <MusicBrainzCandidateGroup
+                        key={mbid}
+                        group={group}
+                        isExpanded={isExpanded}
+                        onToggle={() => toggleGroup(mbid)}
+                        savingMbid={savingMbid}
+                        onSelect={handleSelect}
+                      />
                     );
                   })}
                 </ul>
