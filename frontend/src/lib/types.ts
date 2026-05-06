@@ -9,6 +9,7 @@ export interface MusicBrainzMatch {
   mbid: string;
   title: string;
   artistCredit: string;
+  releaseId: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   score: number | null;

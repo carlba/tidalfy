@@ -148,15 +148,15 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
         ? isNullTypeFilter
           ? releaseType === ''
           : typeFilterExact
-          ? releaseType === normalizedTypeFilter
-          : releaseType.includes(normalizedTypeFilter)
+            ? releaseType === normalizedTypeFilter
+            : releaseType.includes(normalizedTypeFilter)
         : true;
       const secondaryMatches = normalizedSecondaryTypeFilter
         ? isNullSecondaryFilter
           ? secondaryTypes.length === 0
           : secondaryTypeFilterExact
-          ? secondaryTypes.some(type => type === normalizedSecondaryTypeFilter)
-          : secondaryTypes.some(type => type.includes(normalizedSecondaryTypeFilter))
+            ? secondaryTypes.some(type => type === normalizedSecondaryTypeFilter)
+            : secondaryTypes.some(type => type.includes(normalizedSecondaryTypeFilter))
         : true;
 
       const typePass = typeFilterReversed ? !typeMatches : typeMatches;

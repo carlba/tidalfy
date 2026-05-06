@@ -49,6 +49,7 @@ model MusicBrainzMatch {
   mbid         String   @map("mbid")
   title        String   @map("title")
   artistCredit String   @map("artist_credit")
+  releaseId    String?  @map("release_id")
   releaseTitle String?  @map("release_title")
   releaseDate  String?  @map("release_date")
   score        Int?     @map("score")

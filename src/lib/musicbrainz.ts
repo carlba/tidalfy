@@ -41,6 +41,7 @@ export interface MusicBrainzCandidate {
   mbid: string;
   title: string;
   artistCredit: string;
+  releaseId: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
   releaseCountry: string | null;
@@ -233,6 +234,7 @@ export async function searchMusicBrainz(
           title: recording.title,
           artistCredit:
             recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
+          releaseId: release.id,
           releaseTitle: release.title,
           releaseDate: release.date ?? null,
           releaseCountry: release.country ?? null,
