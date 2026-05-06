@@ -60,6 +60,7 @@ export function TrackList({ tracks, onSearchMatch, onArchive, emptyMessage }: Tr
                   {track.match.title} — {track.match.artistCredit}
                   {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
                   {track.match.releaseBarcode ? ` · UPC/EAN: ${track.match.releaseBarcode}` : ''}
+                  {track.match.releaseAsin ? ` · ASIN: ${track.match.releaseAsin}` : ''}
                 </span>
               </div>
             ) : (

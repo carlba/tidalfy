@@ -69,6 +69,7 @@ export async function saveMatch(
       artistCredit: candidate.artistCredit,
       releaseId: candidate.releaseId,
       releaseBarcode: candidate.releaseBarcode,
+      releaseAsin: candidate.releaseAsin,
       releaseTitle: candidate.releaseTitle,
       releaseDate: candidate.releaseDate,
       isrc: candidate.isrc,

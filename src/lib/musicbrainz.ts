@@ -21,6 +21,17 @@ const musicBrainzReleaseSchema = z.object({
   country: z.string().optional(),
   status: z.string().optional(),
   barcode: z.string().optional(),
+  asin: z.string().optional(),
+  packaging: z.string().optional(),
+  'cover-art-archive': z
+    .object({
+      front: z.boolean().optional(),
+      back: z.boolean().optional(),
+      artwork: z.boolean().optional(),
+      count: z.number().optional(),
+      darkened: z.boolean().optional(),
+    })
+    .optional(),
   'release-group': musicBrainzReleaseGroupSchema.optional(),
 });
 
@@ -45,6 +56,9 @@ export interface MusicBrainzCandidate {
   artistCredit: string;
   releaseId: string | null;
   releaseBarcode: string | null;
+  releasePackaging: string | null;
+  releaseAsin: string | null;
+  releaseHasCoverArt: boolean;
   releaseTitle: string | null;
   releaseDate: string | null;
   releaseCountry: string | null;
@@ -57,11 +71,77 @@ export interface MusicBrainzCandidate {
   score: number | null;
 }
 
+interface ReleaseMetadata {
+  barcode: string | null;
+  packaging: string | null;
+  asin: string | null;
+  hasCoverArt: boolean;
+}
+
+const DEFAULT_RELEASE_METADATA: ReleaseMetadata = {
+  barcode: null,
+  packaging: null,
+  asin: null,
+  hasCoverArt: false,
+};
+
+const releaseMetadataSchema = z
+  .object({
+    barcode: z.string().optional(),
+    packaging: z.string().optional(),
+    asin: z.string().optional(),
+    'cover-art-archive': z
+      .object({
+        front: z.boolean().optional(),
+        artwork: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .transform(record => ({
+    barcode: record.barcode?.length ? record.barcode : null,
+    packaging: record.packaging?.length ? record.packaging : null,
+    asin: record.asin?.length ? record.asin : null,
+    hasCoverArt:
+      Boolean(record['cover-art-archive']?.front) || Boolean(record['cover-art-archive']?.artwork),
+  }));
+
 const mbClient = got.extend({
   prefixUrl: MUSICBRAINZ_BASE_URL,
   headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
   responseType: 'json',
 });
+
+async function fetchReleaseMetadata(
+  releaseIds: string[]
+): Promise<Record<string, ReleaseMetadata>> {
+  const results = await Promise.allSettled(
+    releaseIds.map(async releaseId => {
+      const response = await mbClient
+        .get(`release/${releaseId}`, {
+          searchParams: { fmt: 'json' },
+        })
+        .json<unknown>();
+
+      const parsed = releaseMetadataSchema.safeParse(response);
+      if (!parsed.success) {
+        return [releaseId, DEFAULT_RELEASE_METADATA] as const;
+      }
+
+      return [releaseId, parsed.data] as const;
+    })
+  );
+
+  return results.reduce<Record<string, ReleaseMetadata>>((map, result, index) => {
+    const releaseId = releaseIds[index];
+    if (result.status === 'fulfilled') {
+      const [id, metadata] = result.value;
+      map[id] = metadata;
+    } else {
+      map[releaseId] = DEFAULT_RELEASE_METADATA;
+    }
+    return map;
+  }, {});
+}
 
 function normalizeQueryText(text: string): string {
   return text.replace(/"/g, '').trim();
@@ -246,6 +326,14 @@ export async function searchMusicBrainz(
       offset += pageSize;
     }
 
+    const releaseIds = Array.from(
+      new Set(
+        allRecordings.flatMap(recording => (recording.releases ?? []).map(release => release.id))
+      )
+    );
+
+    const releaseMetadata = await fetchReleaseMetadata(releaseIds);
+
     const candidates = allRecordings.flatMap(recording => {
       const releases = recording.releases ?? [];
       const officialReleases = releases.filter(isOfficialRelease);
@@ -255,13 +343,18 @@ export async function searchMusicBrainz(
         const releaseType = release['release-group']?.['primary-type'] ?? null;
         const releaseSecondaryTypes = release['release-group']?.['secondary-types'] ?? [];
 
+        const metadata = releaseMetadata[release.id];
+
         return {
           mbid: recording.id,
           title: recording.title,
           artistCredit:
             recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
           releaseId: release.id,
-          releaseBarcode: release.barcode ?? null,
+          releaseBarcode: release.barcode ?? metadata?.barcode ?? null,
+          releasePackaging: release.packaging ?? metadata?.packaging ?? null,
+          releaseAsin: release.asin ?? metadata?.asin ?? null,
+          releaseHasCoverArt: metadata?.hasCoverArt ?? false,
           releaseTitle: release.title,
           releaseDate: release.date ?? null,
           releaseCountry: release.country ?? null,

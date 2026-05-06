@@ -42,6 +42,9 @@ export interface MusicBrainzCandidate {
   artistCredit: string;
   releaseId: string | null;
   releaseBarcode: string | null;
+  releasePackaging: string | null;
+  releaseAsin: string | null;
+  releaseHasCoverArt: boolean;
   releaseTitle: string | null;
   releaseDate: string | null;
   releaseCountry: string | null;

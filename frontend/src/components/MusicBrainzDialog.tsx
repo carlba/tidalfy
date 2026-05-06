@@ -375,6 +375,26 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                     Release: {releaseTitle}
                                   </p>
                                 )}
+                                {group[0].releaseBarcode && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    UPC/EAN: {group[0].releaseBarcode}
+                                  </p>
+                                )}
+                                {group[0].releasePackaging && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    Packaging: {group[0].releasePackaging}
+                                  </p>
+                                )}
+                                {group[0].releaseAsin && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    ASIN: {group[0].releaseAsin}
+                                  </p>
+                                )}
+                                {group[0].releaseHasCoverArt && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    Cover art available
+                                  </p>
+                                )}
                               </div>
                               <ChevronDown
                                 className={`h-4 w-4 transition-transform ${isExpanded ? '' : '-rotate-90'}`}
@@ -415,6 +435,21 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                       {candidate.releaseBarcode && (
                                         <p className="text-xs text-muted-foreground truncate">
                                           UPC/EAN: {candidate.releaseBarcode}
+                                        </p>
+                                      )}
+                                      {candidate.releasePackaging && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          Packaging: {candidate.releasePackaging}
+                                        </p>
+                                      )}
+                                      {candidate.releaseAsin && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          ASIN: {candidate.releaseAsin}
+                                        </p>
+                                      )}
+                                      {candidate.releaseHasCoverArt && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          Cover art available
                                         </p>
                                       )}
                                       {candidate.releaseType && (
@@ -494,6 +529,21 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                               {group[0].releaseBarcode && (
                                 <p className="text-xs text-muted-foreground truncate">
                                   UPC/EAN: {group[0].releaseBarcode}
+                                </p>
+                              )}
+                              {group[0].releasePackaging && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  Packaging: {group[0].releasePackaging}
+                                </p>
+                              )}
+                              {group[0].releaseAsin && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  ASIN: {group[0].releaseAsin}
+                                </p>
+                              )}
+                              {group[0].releaseHasCoverArt && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  Cover art available
                                 </p>
                               )}
                               {group[0].releaseType && (
