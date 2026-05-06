@@ -285,6 +285,16 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                             : ''}
                                         </p>
                                       )}
+                                      {candidate.releaseType && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          Type: {candidate.releaseType}
+                                        </p>
+                                      )}
+                                      {candidate.releaseSecondaryTypes?.length ? (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          Secondary: {candidate.releaseSecondaryTypes.join(', ')}
+                                        </p>
+                                      ) : null}
                                       <div className="mt-2 flex flex-wrap items-center gap-2">
                                         {candidate.durationMs !== null && (
                                           <Badge variant="outline" className="text-xs px-1 py-0">
@@ -344,6 +354,16 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                                   {group[0].releaseCountry ? ` · ${group[0].releaseCountry}` : ''}
                                 </p>
                               )}
+                              {group[0].releaseType && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  Type: {group[0].releaseType}
+                                </p>
+                              )}
+                              {group[0].releaseSecondaryTypes?.length ? (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  Secondary: {group[0].releaseSecondaryTypes.join(', ')}
+                                </p>
+                              ) : null}
                               <div className="mt-2 flex flex-wrap items-center gap-2">
                                 {group[0].durationMs !== null && (
                                   <Badge variant="outline" className="text-xs px-1 py-0">

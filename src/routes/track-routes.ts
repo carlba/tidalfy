@@ -41,6 +41,8 @@ const musicBrainzCandidateSchema = z.object({
   releaseDate: z.string().nullable(),
   releaseCountry: z.string().nullable(),
   releaseStatus: z.string().nullable(),
+  releaseType: z.string().nullable(),
+  releaseSecondaryTypes: z.array(z.string()).optional(),
   durationMs: z.number().nullable(),
   disambiguation: z.string().nullable(),
   score: z.number().nullable(),
@@ -123,6 +125,8 @@ export async function trackRoutes(app: FastifyInstance) {
           artistCredit: z.string(),
           releaseTitle: z.string().nullable(),
           releaseDate: z.string().nullable(),
+          releaseType: z.string().nullable().optional(),
+          releaseSecondaryTypes: z.array(z.string()).optional(),
           score: z.number().nullable(),
         }),
         response: {

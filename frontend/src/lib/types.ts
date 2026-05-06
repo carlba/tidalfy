@@ -41,6 +41,7 @@ export interface MusicBrainzCandidate {
   releaseDate: string | null;
   releaseCountry: string | null;
   releaseStatus: string | null;
+  releaseType: string | null;
   durationMs: number | null;
   disambiguation: string | null;
   score: number | null;

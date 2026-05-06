@@ -9,12 +9,18 @@ const musicBrainzArtistCreditSchema = z.object({
   name: z.string().optional(),
 });
 
+const musicBrainzReleaseGroupSchema = z.object({
+  'primary-type': z.string().optional(),
+  'secondary-types': z.array(z.string()).optional(),
+});
+
 const musicBrainzReleaseSchema = z.object({
   id: z.string(),
   title: z.string(),
   date: z.string().optional(),
   country: z.string().optional(),
   status: z.string().optional(),
+  'release-group': musicBrainzReleaseGroupSchema.optional(),
 });
 
 const musicBrainzRecordingSchema = z.object({
@@ -39,6 +45,8 @@ export interface MusicBrainzCandidate {
   releaseDate: string | null;
   releaseCountry: string | null;
   releaseStatus: string | null;
+  releaseType: string | null;
+  releaseSecondaryTypes: string[];
   durationMs: number | null;
   disambiguation: string | null;
   score: number | null;
@@ -200,7 +208,7 @@ export async function searchMusicBrainz(
   async function runSearch(query: string) {
     const response = await mbClient
       .get('recording', {
-        searchParams: { query, limit: 100, fmt: 'json', inc: 'releases' },
+        searchParams: { query, limit: 100, fmt: 'json', inc: 'releases+release-groups' },
       })
       .json<unknown>();
 
@@ -216,19 +224,26 @@ export async function searchMusicBrainz(
       const sortedReleases = sortReleases(releasePool, sanitizedAlbumName, includeAlbum);
       const releaseCandidates = sortedReleases.slice(0, 8);
 
-      return releaseCandidates.map(release => ({
-        mbid: recording.id,
-        title: recording.title,
-        artistCredit:
-          recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
-        releaseTitle: release.title,
-        releaseDate: release.date ?? null,
-        releaseCountry: release.country ?? null,
-        releaseStatus: release.status ?? null,
-        durationMs: recording.length ?? null,
-        disambiguation: recording.disambiguation ?? null,
-        score: recording.score ?? null,
-      }));
+      return releaseCandidates.map(release => {
+        const releaseType = release['release-group']?.['primary-type'] ?? null;
+        const releaseSecondaryTypes = release['release-group']?.['secondary-types'] ?? [];
+
+        return {
+          mbid: recording.id,
+          title: recording.title,
+          artistCredit:
+            recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
+          releaseTitle: release.title,
+          releaseDate: release.date ?? null,
+          releaseCountry: release.country ?? null,
+          releaseStatus: release.status ?? null,
+          releaseType,
+          releaseSecondaryTypes,
+          durationMs: recording.length ?? null,
+          disambiguation: recording.disambiguation ?? null,
+          score: recording.score ?? null,
+        };
+      });
     });
 
     const filteredCandidates = sanitizedAlbumName
