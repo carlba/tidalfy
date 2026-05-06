@@ -209,25 +209,47 @@ export async function searchMusicBrainz(
     : baseQuery;
 
   async function runSearch(query: string) {
-    const response = await mbClient
-      .get('recording', {
-        searchParams: { query, limit: 100, fmt: 'json', inc: 'releases+release-groups+isrcs' },
-      })
-      .json<unknown>();
+    const pageSize = 100;
+    let offset = 0;
+    const allRecordings: z.infer<typeof musicBrainzRecordingSchema>[] = [];
 
-    const parsed = musicBrainzSearchResponseSchema.safeParse(response);
-    if (!parsed.success) {
-      return [] as MusicBrainzCandidate[];
+    while (true) {
+      const response = await mbClient
+        .get('recording', {
+          searchParams: {
+            query,
+            limit: pageSize,
+            offset,
+            fmt: 'json',
+            inc: 'releases+release-groups+isrcs',
+          },
+        })
+        .json<unknown>();
+
+      const parsed = musicBrainzSearchResponseSchema.safeParse(response);
+      if (!parsed.success) {
+        return [] as MusicBrainzCandidate[];
+      }
+
+      const recordings = parsed.data.recordings;
+      if (recordings.length === 0) {
+        break;
+      }
+
+      allRecordings.push(...recordings);
+      if (recordings.length < pageSize) {
+        break;
+      }
+
+      offset += pageSize;
     }
 
-    const candidates = parsed.data.recordings.flatMap(recording => {
+    const candidates = allRecordings.flatMap(recording => {
       const releases = recording.releases ?? [];
       const officialReleases = releases.filter(isOfficialRelease);
       const releasePool = officialReleases.length > 0 ? officialReleases : releases;
       const sortedReleases = sortReleases(releasePool, sanitizedAlbumName, includeAlbum);
-      const releaseCandidates = sortedReleases.slice(0, 8);
-
-      return releaseCandidates.map(release => {
+      return sortedReleases.map(release => {
         const releaseType = release['release-group']?.['primary-type'] ?? null;
         const releaseSecondaryTypes = release['release-group']?.['secondary-types'] ?? [];
 
