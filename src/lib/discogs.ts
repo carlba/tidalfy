@@ -35,6 +35,7 @@ export interface DiscogsCandidate {
   releaseDate: string | null;
   releaseCountry: string | null;
   releaseLabel: string | null;
+  releaseType: string | null;
   releaseFormat: string | null;
   releaseBarcode: string | null;
   releaseBarcodeRaw: string[];
@@ -75,6 +76,28 @@ function normalizeResultFormat(format: string | string[] | undefined): string | 
   return format.trim() || null;
 }
 
+function normalizeString(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function parseDiscogsArtistAndTitle(title: string): {
+  artist: string | null;
+  releaseTitle: string;
+} {
+  const match = /^(.*?)\s*[-–—]\s*(.+)$/.exec(title);
+  if (!match) {
+    return { artist: null, releaseTitle: title };
+  }
+
+  const artist = normalizeString(match[1]);
+  const releaseTitle = normalizeString(match[2]) ?? title;
+  return { artist, releaseTitle };
+}
+
 export function extractEanCandidates(raw: string): string[] {
   return raw
     .split(/[\n,;|]/g)
@@ -106,12 +129,22 @@ function buildCandidate(
   const releaseLabel = result.label?.[0] ?? null;
   const releaseFormat = normalizeResultFormat(result.format);
   const releaseCoverArtUrl = result.cover_image ?? result.thumb ?? null;
-  const releaseDate = result.year ? String(result.year) : null;
-  const releaseTitle = result.title ?? null;
+  const releaseDate = normalizeString(result.year ? String(result.year) : null);
+  const rawTitle = normalizeString(result.title) ?? null;
+  const parsedTitle = rawTitle
+    ? parseDiscogsArtistAndTitle(rawTitle)
+    : { artist: null, releaseTitle: rawTitle ?? '' };
+  const releaseTitle = normalizeString(parsedTitle.releaseTitle) ?? null;
+  const candidateArtistCredit = parsedTitle.artist ?? artistCredit;
   const normalizedText = `${releaseTitle ?? ''} ${releaseFormat ?? ''}`;
   const isCompilation = /compilation|various artists|various|soundtrack/i.test(normalizedText);
   const isSingle = /\bsingle\b|\b7\b|7"|7’|12"|12’|\b45 rpm\b|\bpromo\b/i.test(normalizedText);
   const isAlbum = /\balbum\b|\blp\b|\blong play\b/i.test(releaseFormat ?? '');
+
+  LOGGER.debug(
+    { releaseDate, parsedArtist: parsedTitle.artist, candidateArtistCredit },
+    'Discogs artist parsing result'
+  );
 
   const rawBarcode = Array.isArray(result.barcode)
     ? result.barcode.filter(Boolean)
@@ -125,11 +158,12 @@ function buildCandidate(
   return {
     discogsReleaseId: String(result.id),
     title,
-    artistCredit,
+    artistCredit: candidateArtistCredit,
     releaseTitle,
     releaseDate,
     releaseCountry: result.country ?? null,
     releaseLabel,
+    releaseType: result.type ?? null,
     releaseFormat,
     releaseBarcode: normalizedBarcode.primary,
     releaseBarcodeRaw,

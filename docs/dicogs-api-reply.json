@@ -1,0 +1,48 @@
+{
+  "pagination": {
+    "page": 1,
+    "pages": 253,
+    "per_page": 1,
+    "items": 253,
+    "urls": {
+      "last": "https://api.discogs.com/database/search?artist=Radiohead&release_title=OK+Computer&type=release&per_page=1&page=253",
+      "next": "https://api.discogs.com/database/search?artist=Radiohead&release_title=OK+Computer&type=release&per_page=1&page=2"
+    }
+  },
+  "results": [
+    {
+      "country": "Ukraine",
+      "genre": ["Electronic", "Rock"],
+      "format": ["Cassette", "Album", "Unofficial Release"],
+      "style": ["Alternative Rock"],
+      "id": 8617558,
+      "label": ["Gala Studio", "Gala Records"],
+      "type": "release",
+      "barcode": ["4 820011 160014 >", "4820011160014", "ДСТУ 3060-95"],
+      "user_data": {
+        "in_wantlist": false,
+        "in_collection": false
+      },
+      "master_id": 21491,
+      "master_url": "https://api.discogs.com/masters/21491",
+      "uri": "/release/8617558-Radiohead-Ok-%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-OK-Computer",
+      "catno": "GS-204",
+      "title": "Radiohead - Ok. Компьютер (OK Computer)",
+      "thumb": "https://i.discogs.com/xIib84UrRnoR1D6DxVBSr6D5bWpdHLI-cIkhtGAtNm8/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg2MTc1/NTgtMTQ2NTIzNTI4/MC00NzMwLmpwZWc.jpeg",
+      "cover_image": "https://i.discogs.com/Mvzwd9UTBHocAgAi8-862TpCiwP7GghfQwbZgroX_iI/rs:fit/g:sm/q:90/h:619/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg2MTc1/NTgtMTQ2NTIzNTI4/MC00NzMwLmpwZWc.jpeg",
+      "resource_url": "https://api.discogs.com/releases/8617558",
+      "community": {
+        "want": 675,
+        "have": 3
+      },
+      "format_quantity": 1,
+      "formats": [
+        {
+          "name": "Cassette",
+          "qty": "1",
+          "descriptions": ["Album", "Unofficial Release"]
+        }
+      ]
+    }
+  ]
+}

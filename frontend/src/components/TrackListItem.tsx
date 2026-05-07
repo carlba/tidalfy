@@ -1,4 +1,4 @@
-import { Check, AlertCircle, Archive, Disc, Music2, ExternalLink } from 'lucide-react';
+import { Check, Archive, Disc, Music2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDuration } from '@/lib/utils';
@@ -35,6 +35,7 @@ export function TrackListItem({
     : null;
 
   const albumName = track.albumName ? truncateText(track.albumName, 40) : '';
+  const isMatched = Boolean(track.match || track.discogsMatch);
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
@@ -42,6 +43,13 @@ export function TrackListItem({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isMatched}
+                disabled
+                className="h-4 w-4 rounded border border-border bg-muted text-slate-700"
+                aria-label={isMatched ? 'Track is matched' : 'Track is not matched'}
+              />
               <p className="font-medium text-sm truncate">{track.trackName}</p>
               {track.explicit && (
                 <Badge variant="outline" className="text-xs px-1 py-0 shrink-0">
@@ -90,12 +98,7 @@ export function TrackListItem({
               </p>
             )}
           </div>
-        ) : (
-          <div className="flex items-center gap-1 mt-1">
-            <AlertCircle className="h-3 w-3 text-amber-500 shrink-0" />
-            <span className="text-xs text-amber-600">No MusicBrainz match</span>
-          </div>
-        )}
+        ) : null}
         {track.discogsMatch ? (
           <div className="flex flex-col gap-1 mt-1">
             <div className="flex items-center gap-2 flex-wrap">

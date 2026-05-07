@@ -27,6 +27,7 @@ export interface DiscogsMatch {
   releaseDate: string | null;
   releaseCountry: string | null;
   releaseLabel: string | null;
+  releaseType: string | null;
   releaseFormat: string | null;
   releaseBarcode: string | null;
   releaseBarcodeRaw: string[];
@@ -45,6 +46,7 @@ export interface DiscogsCandidate {
   releaseDate: string | null;
   releaseCountry: string | null;
   releaseLabel: string | null;
+  releaseType: string | null;
   releaseFormat: string | null;
   releaseBarcode: string | null;
   releaseBarcodeRaw: string[];

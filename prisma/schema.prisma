@@ -73,6 +73,7 @@ model DiscogsMatch {
   releaseDate      String?  @map("release_date")
   releaseCountry   String?  @map("release_country")
   releaseLabel     String?  @map("release_label")
+  releaseType      String?  @map("release_type")
   releaseFormat    String?  @map("release_format")
   releaseBarcode   String?  @map("release_barcode")
   releaseBarcodeRaw String[] @default([]) @map("release_barcode_raw")

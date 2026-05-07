@@ -9,9 +9,11 @@ vi.mock('../registry.js', () => ({
 
 let extractEanCandidates: typeof import('./discogs.js').extractEanCandidates;
 let normalizeDiscogsBarcode: typeof import('./discogs.js').normalizeDiscogsBarcode;
+let parseDiscogsArtistAndTitle: typeof import('./discogs.js').parseDiscogsArtistAndTitle;
 
 beforeAll(async () => {
-  ({ extractEanCandidates, normalizeDiscogsBarcode } = await import('./discogs.js'));
+  ({ extractEanCandidates, normalizeDiscogsBarcode, parseDiscogsArtistAndTitle } =
+    await import('./discogs.js'));
 });
 
 describe('Discogs barcode normalization', () => {
@@ -30,6 +32,22 @@ describe('Discogs barcode normalization', () => {
     expect(result).toEqual({
       primary: '0123456789012',
       all: ['0123456789012', '0000111222333'],
+    });
+  });
+});
+
+describe('Discogs title parsing', () => {
+  it('splits an artist and release title from Discogs search title', () => {
+    expect(parseDiscogsArtistAndTitle('Radiohead - OK Computer')).toEqual({
+      artist: 'Radiohead',
+      releaseTitle: 'OK Computer',
+    });
+  });
+
+  it('returns null artist for titles without a separator', () => {
+    expect(parseDiscogsArtistAndTitle('OK Computer')).toEqual({
+      artist: null,
+      releaseTitle: 'OK Computer',
     });
   });
 });
