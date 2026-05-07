@@ -94,8 +94,7 @@ function buildCandidate(
   const isCompilation = /compilation|various artists|various|soundtrack/i.test(normalizedText);
   const isSingle = /\bsingle\b|\b7\b|7"|7’|12"|12’|\b45 rpm\b|\bpromo\b/i.test(normalizedText);
   const isAlbum = /\balbum\b|\blp\b|\blong play\b/i.test(releaseFormat ?? '');
-  const releaseBarcode =
-    normalizeBarcode(result.barcode) ?? normalizeBarcode(result.barcodes);
+  const releaseBarcode = normalizeBarcode(result.barcode) ?? normalizeBarcode(result.barcodes);
 
   return {
     discogsReleaseId: String(result.id),

@@ -31,6 +31,7 @@ export interface DiscogsMatch {
   releaseBarcode: string | null;
   releaseCoverArtUrl: string | null;
   resourceUrl: string | null;
+  isrc?: string | null;
   selectedAt: string;
 }
 
@@ -46,6 +47,7 @@ export interface DiscogsCandidate {
   releaseBarcode: string | null;
   releaseCoverArtUrl: string | null;
   resourceUrl: string | null;
+  isrc?: string | null;
 }
 
 export interface Track {

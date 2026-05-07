@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { searchDiscogs, saveDiscogsMatch } from '@/lib/api';
+import { DiscogsCandidateItem } from '@/components/DiscogsCandidateItem';
 import type { DiscogsCandidate, DiscogsMatch, Track } from '@/lib/types';
 
 interface DiscogsDialogProps {
@@ -143,43 +144,12 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
               <div className="overflow-y-auto max-h-[45vh] min-h-0">
                 <ul className="divide-y divide-border">
                   {candidates.map(candidate => (
-                    <li key={candidate.discogsReleaseId} className="p-4">
-                      <div className="flex items-start gap-4">
-                        {candidate.releaseCoverArtUrl ? (
-                          <img
-                            src={candidate.releaseCoverArtUrl}
-                            alt={candidate.releaseTitle ?? 'Release cover art'}
-                            className="h-16 w-16 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="h-16 w-16 rounded-md bg-muted" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">
-                            {candidate.releaseTitle ?? candidate.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {candidate.artistCredit}
-                            {candidate.releaseDate ? ` · ${candidate.releaseDate}` : ''}
-                            {candidate.releaseCountry ? ` · ${candidate.releaseCountry}` : ''}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {candidate.releaseLabel ? `${candidate.releaseLabel}` : ''}
-                            {candidate.releaseFormat ? ` · ${candidate.releaseFormat}` : ''}
-                            {candidate.releaseBarcode ? ` · EAN: ${candidate.releaseBarcode}` : ''}
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleSelect(candidate)}
-                          disabled={savingReleaseId === candidate.discogsReleaseId}>
-                          {savingReleaseId === candidate.discogsReleaseId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            'Select'
-                          )}
-                        </Button>
-                      </div>
+                    <li key={candidate.discogsReleaseId} className="border-b last:border-b-0">
+                      <DiscogsCandidateItem
+                        candidate={candidate}
+                        savingReleaseId={savingReleaseId}
+                        onSelect={handleSelect}
+                      />
                     </li>
                   ))}
                 </ul>

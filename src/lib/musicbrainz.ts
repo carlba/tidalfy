@@ -119,6 +119,16 @@ async function fetchReleaseMetadata(
 ): Promise<Record<string, ReleaseMetadata>> {
   const results = await Promise.allSettled(
     releaseIds.map(async releaseId => {
+      LOGGER.debug(
+        {
+          module: 'MusicBrainz',
+          context: fetchReleaseMetadata.name,
+          releaseId,
+          url: `${MUSICBRAINZ_BASE_URL}/release/${releaseId}`,
+        },
+        'Retrieving MusicBrainz release metadata'
+      );
+
       const response = await mbClient
         .get(`release/${releaseId}`, {
           searchParams: { fmt: 'json' },
@@ -354,13 +364,25 @@ export async function searchMusicBrainz(
         offset += pageSize;
       }
 
-      const releaseIds = Array.from(
+      const releaseIdsToFetch = Array.from(
         new Set(
-          allRecordings.flatMap(recording => (recording.releases ?? []).map(release => release.id))
+          allRecordings
+            .flatMap(recording => recording.releases ?? [])
+            .filter(
+              release =>
+                release.barcode == null &&
+                release.packaging == null &&
+                release.asin == null &&
+                release['cover-art-archive'] == null
+            )
+            .map(release => release.id)
         )
       );
 
-      const releaseMetadata = await fetchReleaseMetadata(releaseIds);
+      const releaseMetadata =
+        releaseIdsToFetch.length > 0 ? await fetchReleaseMetadata(releaseIdsToFetch) : {};
+
+      LOGGER.debug({ allRecordings, releaseMetadata }, 'test');
 
       const candidates = allRecordings.flatMap(recording => {
         const releases = recording.releases ?? [];
@@ -372,6 +394,10 @@ export async function searchMusicBrainz(
           const releaseSecondaryTypes = release['release-group']?.['secondary-types'] ?? [];
 
           const metadata = releaseMetadata[release.id];
+          const hasCoverArt =
+            Boolean(release['cover-art-archive']?.front) ||
+            Boolean(release['cover-art-archive']?.artwork) ||
+            Boolean(metadata?.hasCoverArt);
 
           return {
             mbid: recording.id,
@@ -380,13 +406,12 @@ export async function searchMusicBrainz(
               recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
             releaseId: release.id,
             releaseBarcode: release.barcode ?? metadata?.barcode ?? null,
-            releaseCoverArtUrl:
-              release['cover-art-archive']?.front || metadata?.hasCoverArt
-                ? `https://coverartarchive.org/release/${release.id}/front`
-                : null,
+            releaseCoverArtUrl: hasCoverArt
+              ? `https://coverartarchive.org/release/${release.id}/front`
+              : null,
             releasePackaging: release.packaging ?? metadata?.packaging ?? null,
             releaseAsin: release.asin ?? metadata?.asin ?? null,
-            releaseHasCoverArt: metadata?.hasCoverArt ?? false,
+            releaseHasCoverArt: hasCoverArt,
             releaseTitle: release.title,
             releaseDate: release.date ?? null,
             releaseCountry: release.country ?? null,

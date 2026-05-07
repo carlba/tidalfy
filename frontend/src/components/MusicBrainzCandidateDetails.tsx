@@ -31,6 +31,7 @@ export function MusicBrainzCandidateDetails({
         <DetailText>Packaging: {candidate.releasePackaging}</DetailText>
       )}
       {candidate.releaseAsin && <DetailText>ASIN: {candidate.releaseAsin}</DetailText>}
+      {candidate.isrc && <DetailText>ISRC: {candidate.isrc}</DetailText>}
       {candidate.releaseStatus && <DetailText>Status: {candidate.releaseStatus}</DetailText>}
       {candidate.releaseHasCoverArt && <DetailText>Cover art available</DetailText>}
       {showTypeDetails && candidate.releaseType && (
