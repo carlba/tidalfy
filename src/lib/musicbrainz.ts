@@ -1,10 +1,39 @@
 import got from 'got';
 import { z } from 'zod';
-import { createLogger } from './logger.js';
+import Keyv from 'keyv';
+import KeyvPostgres from '@keyv/postgres';
+import { config, LOGGER } from '../registry.js';
 
 const MUSICBRAINZ_BASE_URL = 'https://musicbrainz.org/ws/2';
-const LOGGER = createLogger(undefined, 'development').child({ module: 'musicbrainz' });
 const USER_AGENT = 'tidalfy/0.0.1 (https://github.com/carlba/tidalfy)';
+const MUSICBRAINZ_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
+const logger = LOGGER.child({ module: 'musicbrainz' });
+const cacheStore = config.isDevelopment
+  ? new Keyv({
+      store: new KeyvPostgres({ uri: config.DATABASE_URL, table: 'musicbrainz_got_cache' }),
+      ttl: MUSICBRAINZ_CACHE_TTL_MS,
+    })
+  : undefined;
+
+const mbClient = got.extend({
+  prefixUrl: MUSICBRAINZ_BASE_URL,
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+  responseType: 'json',
+  cache: cacheStore,
+  hooks: {
+    beforeCache: [
+      response => {
+        if (!config.isDevelopment) {
+          return;
+        }
+
+        response.headers['cache-control'] =
+          `public, max-age=${MUSICBRAINZ_CACHE_TTL_MS / 1000}, immutable`;
+      },
+    ],
+  },
+});
 
 const musicBrainzArtistCreditSchema = z.object({
   artist: z.object({ id: z.string(), name: z.string() }),
@@ -108,34 +137,27 @@ const releaseMetadataSchema = z
       Boolean(record['cover-art-archive']?.front) || Boolean(record['cover-art-archive']?.artwork),
   }));
 
-const mbClient = got.extend({
-  prefixUrl: MUSICBRAINZ_BASE_URL,
-  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-  responseType: 'json',
-});
-
 async function fetchReleaseMetadata(
   releaseIds: string[]
 ): Promise<Record<string, ReleaseMetadata>> {
   const results = await Promise.allSettled(
     releaseIds.map(async releaseId => {
-      LOGGER.debug(
+      const response = await mbClient.get(`release/${releaseId}`, {
+        searchParams: { fmt: 'json' },
+      });
+
+      logger.debug(
         {
           module: 'MusicBrainz',
           context: fetchReleaseMetadata.name,
           releaseId,
           url: `${MUSICBRAINZ_BASE_URL}/release/${releaseId}`,
+          isFromCache: response.isFromCache,
         },
         'Retrieving MusicBrainz release metadata'
       );
 
-      const response = await mbClient
-        .get(`release/${releaseId}`, {
-          searchParams: { fmt: 'json' },
-        })
-        .json<unknown>();
-
-      const parsed = releaseMetadataSchema.safeParse(response);
+      const parsed = releaseMetadataSchema.safeParse(JSON.stringify(response.body));
       if (!parsed.success) {
         return [releaseId, DEFAULT_RELEASE_METADATA] as const;
       }
@@ -312,7 +334,7 @@ export async function searchMusicBrainz(
       while (true) {
         let response: unknown;
         try {
-          LOGGER.debug(
+          logger.debug(
             {
               service: 'MusicBrainz',
               query,
@@ -334,7 +356,7 @@ export async function searchMusicBrainz(
             })
             .json<unknown>();
         } catch (error) {
-          LOGGER.warn(
+          logger.warn(
             {
               service: 'MusicBrainz',
               query,
@@ -381,8 +403,6 @@ export async function searchMusicBrainz(
 
       const releaseMetadata =
         releaseIdsToFetch.length > 0 ? await fetchReleaseMetadata(releaseIdsToFetch) : {};
-
-      LOGGER.debug({ allRecordings, releaseMetadata }, 'test');
 
       const candidates = allRecordings.flatMap(recording => {
         const releases = recording.releases ?? [];

@@ -1,5 +1,18 @@
-import { describe, expect, it } from 'vitest';
-import { selectBestRelease } from './musicbrainz.js';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
+const moduleLogger = { debug: vi.fn(), warn: vi.fn() };
+const registryLogger = { child: vi.fn(() => moduleLogger) };
+
+vi.mock('../registry.js', () => ({
+  config: { isDevelopment: true, NODE_ENV: 'test' },
+  LOGGER: registryLogger,
+}));
+
+let selectBestRelease: typeof import('./musicbrainz.js').selectBestRelease;
+
+beforeAll(async () => {
+  ({ selectBestRelease } = await import('./musicbrainz.js'));
+});
 
 describe('selectBestRelease', () => {
   const releases = [
