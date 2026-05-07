@@ -11,5 +11,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  postgres-cache:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cache
+      POSTGRES_PASSWORD: cache
+      POSTGRES_DB: cache
+    ports:
+      - '5434:5432'
+    volumes:
+      - postgres_cache_data:/var/lib/postgresql/data
+
 volumes:
   postgres_data:
+  postgres_cache_data:

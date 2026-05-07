@@ -11,7 +11,7 @@ const MUSICBRAINZ_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 const logger = LOGGER.child({ module: 'musicbrainz' });
 const cacheStore = config.isDevelopment
   ? new Keyv({
-      store: new KeyvPostgres({ uri: config.DATABASE_URL, table: 'musicbrainz_got_cache' }),
+      store: new KeyvPostgres({ uri: config.DATABASE_CACHE_URL, table: 'musicbrainz_got_cache' }),
       ttl: MUSICBRAINZ_CACHE_TTL_MS,
     })
   : undefined;
@@ -278,6 +278,24 @@ function findReleaseByTrackDate(
   return earliestRelease(yearMatches);
 }
 
+function releaseMatchesSearchFilters(
+  release: z.infer<typeof musicBrainzReleaseSchema>,
+  onlyAlbum: boolean,
+  noSecondaryType: boolean
+): boolean {
+  const releaseGroup = release['release-group'];
+
+  if (onlyAlbum && releaseGroup?.['primary-type'] !== 'Album') {
+    return false;
+  }
+
+  if (noSecondaryType && (releaseGroup?.['secondary-types']?.length ?? 0) > 0) {
+    return false;
+  }
+
+  return true;
+}
+
 export function selectBestRelease(
   releases: z.infer<typeof musicBrainzReleaseSchema>[] | undefined,
   albumName?: string,
@@ -314,7 +332,9 @@ export async function searchMusicBrainz(
   albumName?: string,
   trackReleaseDate?: string | null,
   includeAlbum = false,
-  useScoreOnly = false
+  useScoreOnly = false,
+  onlyAlbum = true,
+  noSecondaryType = true
 ): Promise<MusicBrainzCandidate[]> {
   try {
     const sanitizedTrackName = normalizeQueryText(trackName);
@@ -386,9 +406,18 @@ export async function searchMusicBrainz(
         offset += pageSize;
       }
 
+      const filteredRecordings = allRecordings
+        .map(recording => ({
+          ...recording,
+          releases: recording.releases?.filter(release =>
+            releaseMatchesSearchFilters(release, onlyAlbum, noSecondaryType)
+          ),
+        }))
+        .filter(recording => (recording.releases?.length ?? 0) > 0);
+
       const releaseIdsToFetch = Array.from(
         new Set(
-          allRecordings
+          filteredRecordings
             .flatMap(recording => recording.releases ?? [])
             .filter(
               release =>
@@ -404,7 +433,7 @@ export async function searchMusicBrainz(
       const releaseMetadata =
         releaseIdsToFetch.length > 0 ? await fetchReleaseMetadata(releaseIdsToFetch) : {};
 
-      const candidates = allRecordings.flatMap(recording => {
+      const candidates = filteredRecordings.flatMap(recording => {
         const releases = recording.releases ?? [];
         const officialReleases = releases.filter(isOfficialRelease);
         const releasePool = officialReleases.length > 0 ? officialReleases : releases;

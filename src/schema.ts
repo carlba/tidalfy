@@ -8,6 +8,7 @@ export const envSchema = z
       .default('development')
       .pipe(z.enum(['production', 'development', 'test'])),
     DATABASE_URL: z.string().url(),
+    DATABASE_CACHE_URL: z.string().url(),
     PORT: z.coerce.number().int().positive().default(3000),
     DISCOGS_USER_TOKEN: z.string().optional(),
   })
@@ -15,6 +16,7 @@ export const envSchema = z
     NODE_ENV: raw.NODE_ENV,
     isDevelopment: raw.NODE_ENV !== 'production',
     DATABASE_URL: raw.DATABASE_URL,
+    DATABASE_CACHE_URL: raw.DATABASE_CACHE_URL,
     PORT: raw.PORT,
     DISCOGS_USER_TOKEN: raw.DISCOGS_USER_TOKEN,
   }));
