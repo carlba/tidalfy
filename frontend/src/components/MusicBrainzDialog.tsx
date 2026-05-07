@@ -64,7 +64,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       const results = await searchMusicBrainz(
         track.id,
         includeAlbum,
-        albumFilterValue,
+        includeAlbum ? albumFilterValue : '',
         useScoreOnly
       );
       setCandidates(results);

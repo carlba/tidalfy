@@ -1,7 +1,9 @@
 import got from 'got';
 import { z } from 'zod';
+import { createLogger } from './logger.js';
 
 const MUSICBRAINZ_BASE_URL = 'https://musicbrainz.org/ws/2';
+const LOGGER = createLogger(undefined, 'development').child({ module: 'musicbrainz' });
 const USER_AGENT = 'tidalfy/0.0.1 (https://github.com/carlba/tidalfy)';
 
 const musicBrainzArtistCreditSchema = z.object({
@@ -282,160 +284,190 @@ export async function searchMusicBrainz(
   includeAlbum = false,
   useScoreOnly = false
 ): Promise<MusicBrainzCandidate[]> {
-  const sanitizedTrackName = normalizeQueryText(trackName);
-  const sanitizedArtistName = normalizeQueryText(artistName);
-  const sanitizedAlbumName = albumName ? normalizeQueryText(albumName) : undefined;
+  try {
+    const sanitizedTrackName = normalizeQueryText(trackName);
+    const sanitizedArtistName = normalizeQueryText(artistName);
+    const sanitizedAlbumName = albumName ? normalizeQueryText(albumName) : undefined;
 
-  const baseQuery = [`recording:"${sanitizedTrackName}"`, `artist:"${sanitizedArtistName}"`];
-  const albumQuery = sanitizedAlbumName
-    ? [...baseQuery, `release:"${sanitizedAlbumName}"`]
-    : baseQuery;
+    const baseQuery = [`recording:"${sanitizedTrackName}"`, `artist:"${sanitizedArtistName}"`];
+    const albumQuery = sanitizedAlbumName
+      ? [...baseQuery, `release:"${sanitizedAlbumName}"`]
+      : baseQuery;
 
-  async function runSearch(query: string) {
-    const pageSize = 100;
-    let offset = 0;
-    const allRecordings: z.infer<typeof musicBrainzRecordingSchema>[] = [];
+    async function runSearch(query: string) {
+      const pageSize = 100;
+      let offset = 0;
+      const allRecordings: z.infer<typeof musicBrainzRecordingSchema>[] = [];
 
-    while (true) {
-      const response = await mbClient
-        .get('recording', {
-          searchParams: {
-            query,
-            limit: pageSize,
-            offset,
-            fmt: 'json',
-            inc: 'releases+release-groups+isrcs',
-          },
-        })
-        .json<unknown>();
+      while (true) {
+        let response: unknown;
+        try {
+          LOGGER.debug(
+            {
+              service: 'MusicBrainz',
+              query,
+              offset,
+              limit: pageSize,
+            },
+            'Sending MusicBrainz search request'
+          );
 
-      const parsed = musicBrainzSearchResponseSchema.safeParse(response);
-      if (!parsed.success) {
-        return [] as MusicBrainzCandidate[];
-      }
-
-      const recordings = parsed.data.recordings;
-      if (recordings.length === 0) {
-        break;
-      }
-
-      allRecordings.push(...recordings);
-      if (recordings.length < pageSize) {
-        break;
-      }
-
-      offset += pageSize;
-    }
-
-    const releaseIds = Array.from(
-      new Set(
-        allRecordings.flatMap(recording => (recording.releases ?? []).map(release => release.id))
-      )
-    );
-
-    const releaseMetadata = await fetchReleaseMetadata(releaseIds);
-
-    const candidates = allRecordings.flatMap(recording => {
-      const releases = recording.releases ?? [];
-      const officialReleases = releases.filter(isOfficialRelease);
-      const releasePool = officialReleases.length > 0 ? officialReleases : releases;
-      const sortedReleases = sortReleases(releasePool, sanitizedAlbumName, includeAlbum);
-      return sortedReleases.map(release => {
-        const releaseType = release['release-group']?.['primary-type'] ?? null;
-        const releaseSecondaryTypes = release['release-group']?.['secondary-types'] ?? [];
-
-        const metadata = releaseMetadata[release.id];
-
-        return {
-          mbid: recording.id,
-          title: recording.title,
-          artistCredit:
-            recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
-          releaseId: release.id,
-          releaseBarcode: release.barcode ?? metadata?.barcode ?? null,
-          releaseCoverArtUrl:
-            release['cover-art-archive']?.front || metadata?.hasCoverArt
-              ? `https://coverartarchive.org/release/${release.id}/front`
-              : null,
-          releasePackaging: release.packaging ?? metadata?.packaging ?? null,
-          releaseAsin: release.asin ?? metadata?.asin ?? null,
-          releaseHasCoverArt: metadata?.hasCoverArt ?? false,
-          releaseTitle: release.title,
-          releaseDate: release.date ?? null,
-          releaseCountry: release.country ?? null,
-          releaseStatus: release.status ?? null,
-          releaseType,
-          releaseSecondaryTypes,
-          durationMs: recording.length ?? null,
-          disambiguation: recording.disambiguation ?? null,
-          isrc: recording.isrcs?.[0] ?? null,
-          score: recording.score ?? null,
-        };
-      });
-    });
-
-    const filteredCandidates = sanitizedAlbumName
-      ? candidates.filter(candidate =>
-          normalizeSearchText(candidate.releaseTitle ?? '').includes(sanitizedAlbumName)
-        )
-      : candidates;
-
-    const resultCandidates =
-      sanitizedAlbumName && filteredCandidates.length > 0 ? filteredCandidates : candidates;
-
-    return resultCandidates.sort((left, right) => {
-      if (useScoreOnly) {
-        const leftScore = left.score ?? 0;
-        const rightScore = right.score ?? 0;
-        if (leftScore !== rightScore) {
-          return rightScore - leftScore;
+          response = await mbClient
+            .get('recording', {
+              searchParams: {
+                query,
+                limit: pageSize,
+                offset,
+                fmt: 'json',
+                inc: 'releases+release-groups+isrcs',
+              },
+            })
+            .json<unknown>();
+        } catch (error) {
+          LOGGER.warn(
+            {
+              service: 'MusicBrainz',
+              query,
+              offset,
+              error: error instanceof Error ? error.message : String(error),
+            },
+            'MusicBrainz request failed'
+          );
+          return [] as MusicBrainzCandidate[];
         }
+
+        const parsed = musicBrainzSearchResponseSchema.safeParse(response);
+        if (!parsed.success) {
+          return [] as MusicBrainzCandidate[];
+        }
+
+        const recordings = parsed.data.recordings;
+        if (recordings.length === 0) {
+          break;
+        }
+
+        allRecordings.push(...recordings);
+        if (recordings.length < pageSize) {
+          break;
+        }
+
+        offset += pageSize;
+      }
+
+      const releaseIds = Array.from(
+        new Set(
+          allRecordings.flatMap(recording => (recording.releases ?? []).map(release => release.id))
+        )
+      );
+
+      const releaseMetadata = await fetchReleaseMetadata(releaseIds);
+
+      const candidates = allRecordings.flatMap(recording => {
+        const releases = recording.releases ?? [];
+        const officialReleases = releases.filter(isOfficialRelease);
+        const releasePool = officialReleases.length > 0 ? officialReleases : releases;
+        const sortedReleases = sortReleases(releasePool, sanitizedAlbumName, includeAlbum);
+        return sortedReleases.map(release => {
+          const releaseType = release['release-group']?.['primary-type'] ?? null;
+          const releaseSecondaryTypes = release['release-group']?.['secondary-types'] ?? [];
+
+          const metadata = releaseMetadata[release.id];
+
+          return {
+            mbid: recording.id,
+            title: recording.title,
+            artistCredit:
+              recording['artist-credit']?.map(ac => ac.name ?? ac.artist.name).join(', ') ?? '',
+            releaseId: release.id,
+            releaseBarcode: release.barcode ?? metadata?.barcode ?? null,
+            releaseCoverArtUrl:
+              release['cover-art-archive']?.front || metadata?.hasCoverArt
+                ? `https://coverartarchive.org/release/${release.id}/front`
+                : null,
+            releasePackaging: release.packaging ?? metadata?.packaging ?? null,
+            releaseAsin: release.asin ?? metadata?.asin ?? null,
+            releaseHasCoverArt: metadata?.hasCoverArt ?? false,
+            releaseTitle: release.title,
+            releaseDate: release.date ?? null,
+            releaseCountry: release.country ?? null,
+            releaseStatus: release.status ?? null,
+            releaseType,
+            releaseSecondaryTypes,
+            durationMs: recording.length ?? null,
+            disambiguation: recording.disambiguation ?? null,
+            isrc: recording.isrcs?.[0] ?? null,
+            score: recording.score ?? null,
+          };
+        });
+      });
+
+      const filteredCandidates = sanitizedAlbumName
+        ? candidates.filter(candidate =>
+            normalizeSearchText(candidate.releaseTitle ?? '').includes(sanitizedAlbumName)
+          )
+        : candidates;
+
+      const resultCandidates =
+        sanitizedAlbumName && filteredCandidates.length > 0 ? filteredCandidates : candidates;
+
+      return resultCandidates.sort((left, right) => {
+        if (useScoreOnly) {
+          const leftScore = left.score ?? 0;
+          const rightScore = right.score ?? 0;
+          if (leftScore !== rightScore) {
+            return rightScore - leftScore;
+          }
+          const leftDate = left.releaseDate ? parseInt(left.releaseDate.slice(0, 4), 10) : 9999;
+          const rightDate = right.releaseDate ? parseInt(right.releaseDate.slice(0, 4), 10) : 9999;
+          if (leftDate !== rightDate) {
+            return leftDate - rightDate;
+          }
+          return 0;
+        }
+
+        const leftAlbum = left.releaseTitle ? normalizeSearchText(left.releaseTitle) : '';
+        const rightAlbum = right.releaseTitle ? normalizeSearchText(right.releaseTitle) : '';
+        const leftExact = sanitizedAlbumName && leftAlbum === sanitizedAlbumName;
+        const rightExact = sanitizedAlbumName && rightAlbum === sanitizedAlbumName;
+
+        if (leftExact !== rightExact) {
+          return leftExact ? -1 : 1;
+        }
+
+        if (left.releaseStatus !== right.releaseStatus) {
+          if (left.releaseStatus === 'Official') return -1;
+          if (right.releaseStatus === 'Official') return 1;
+        }
+
+        const leftLive = /live|bootleg|compilation|demo|remix/i.test(left.releaseTitle ?? '')
+          ? 1
+          : 0;
+        const rightLive = /live|bootleg|compilation|demo|remix/i.test(right.releaseTitle ?? '')
+          ? 1
+          : 0;
+        if (leftLive !== rightLive) {
+          return leftLive - rightLive;
+        }
+
         const leftDate = left.releaseDate ? parseInt(left.releaseDate.slice(0, 4), 10) : 9999;
         const rightDate = right.releaseDate ? parseInt(right.releaseDate.slice(0, 4), 10) : 9999;
         if (leftDate !== rightDate) {
           return leftDate - rightDate;
         }
+
         return 0;
-      }
-
-      const leftAlbum = left.releaseTitle ? normalizeSearchText(left.releaseTitle) : '';
-      const rightAlbum = right.releaseTitle ? normalizeSearchText(right.releaseTitle) : '';
-      const leftExact = sanitizedAlbumName && leftAlbum === sanitizedAlbumName;
-      const rightExact = sanitizedAlbumName && rightAlbum === sanitizedAlbumName;
-
-      if (leftExact !== rightExact) {
-        return leftExact ? -1 : 1;
-      }
-
-      if (left.releaseStatus !== right.releaseStatus) {
-        if (left.releaseStatus === 'Official') return -1;
-        if (right.releaseStatus === 'Official') return 1;
-      }
-
-      const leftLive = /live|bootleg|compilation|demo|remix/i.test(left.releaseTitle ?? '') ? 1 : 0;
-      const rightLive = /live|bootleg|compilation|demo|remix/i.test(right.releaseTitle ?? '')
-        ? 1
-        : 0;
-      if (leftLive !== rightLive) {
-        return leftLive - rightLive;
-      }
-
-      const leftDate = left.releaseDate ? parseInt(left.releaseDate.slice(0, 4), 10) : 9999;
-      const rightDate = right.releaseDate ? parseInt(right.releaseDate.slice(0, 4), 10) : 9999;
-      if (leftDate !== rightDate) {
-        return leftDate - rightDate;
-      }
-
-      return 0;
-    });
-  }
-
-  if (includeAlbum && sanitizedAlbumName) {
-    const albumResults = await runSearch(albumQuery.join(' AND '));
-    if (albumResults.length > 0) {
-      return albumResults;
+      });
     }
-  }
 
-  return await runSearch(baseQuery.join(' AND '));
+    if (includeAlbum && sanitizedAlbumName) {
+      const albumResults = await runSearch(albumQuery.join(' AND '));
+      if (albumResults.length > 0) {
+        return albumResults;
+      }
+    }
+
+    return await runSearch(baseQuery.join(' AND '));
+  } catch {
+    return [];
+  }
 }

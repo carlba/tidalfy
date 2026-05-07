@@ -20,24 +20,25 @@ model ImportBatch {
 }
 
 model Track {
-  id          String            @id @default(cuid()) @map("id")
-  batchId     String            @map("batch_id")
-  batch       ImportBatch       @relation(fields: [batchId], references: [id], onDelete: Cascade, name: "TrackBatch")
-  spotifyUri  String            @map("spotify_uri")
-  trackName   String            @map("track_name")
-  albumName   String            @map("album_name")
-  artistNames String[]          @map("artist_names")
-  releaseDate String?           @map("release_date")
-  durationMs  Int               @map("duration_ms")
-  popularity  Int               @map("popularity")
-  explicit    Boolean           @map("explicit")
-  addedBy     String?           @map("added_by")
-  addedAt     DateTime?         @map("added_at")
-  genres      String[]          @map("genres")
-  recordLabel String?           @map("record_label")
-  archived    Boolean           @default(false) @map("archived")
-  rawData     Json              @map("raw_data")
-  match       MusicBrainzMatch? @relation(name: "TrackMatch")
+  id             String            @id @default(cuid()) @map("id")
+  batchId        String            @map("batch_id")
+  batch          ImportBatch       @relation(fields: [batchId], references: [id], onDelete: Cascade, name: "TrackBatch")
+  spotifyUri     String            @map("spotify_uri")
+  trackName      String            @map("track_name")
+  albumName      String            @map("album_name")
+  artistNames    String[]          @map("artist_names")
+  releaseDate    String?           @map("release_date")
+  durationMs     Int               @map("duration_ms")
+  popularity     Int               @map("popularity")
+  explicit       Boolean           @map("explicit")
+  addedBy        String?           @map("added_by")
+  addedAt        DateTime?         @map("added_at")
+  genres         String[]          @map("genres")
+  recordLabel    String?           @map("record_label")
+  archived       Boolean           @default(false) @map("archived")
+  rawData        Json              @map("raw_data")
+  match          MusicBrainzMatch? @relation(name: "TrackMatch")
+  discogsMatch   DiscogsMatch?     @relation(name: "TrackDiscogsMatch")
 
   @@map("track")
 }
@@ -59,4 +60,24 @@ model MusicBrainzMatch {
   selectedAt     DateTime @default(now()) @map("selected_at")
 
   @@map("musicbrainz_match")
+}
+
+model DiscogsMatch {
+  id               String   @id @default(cuid()) @map("id")
+  trackId          String   @unique @map("track_id")
+  track            Track    @relation(fields: [trackId], references: [id], onDelete: Cascade, name: "TrackDiscogsMatch")
+  discogsReleaseId String   @map("discogs_release_id")
+  title            String   @map("title")
+  artistCredit     String   @map("artist_credit")
+  releaseTitle     String?  @map("release_title")
+  releaseDate      String?  @map("release_date")
+  releaseCountry   String?  @map("release_country")
+  releaseLabel     String?  @map("release_label")
+  releaseFormat    String?  @map("release_format")
+  releaseBarcode   String?  @map("release_barcode")
+  releaseCoverArtUrl String? @map("release_cover_art_url")
+  resourceUrl      String?  @map("resource_url")
+  selectedAt       DateTime @default(now()) @map("selected_at")
+
+  @@map("discogs_match")
 }

@@ -9,7 +9,8 @@ MusicBrainz, as a first step toward syncing your music library to Tidal.
 - Parse and persist imported tracks into a PostgreSQL database
 - View imported track batches with artist, album, and duration metadata
 - Search MusicBrainz for each track and select the correct recording
-- Persist selected MusicBrainz matches per track, revisitable at any time
+- Search Discogs for album metadata enrichment, including EAN and cover art
+- Persist selected MusicBrainz or Discogs matches per track, revisitable at any time
 - Clear surfacing of import errors and failed rows
 
 ## Architecture
@@ -85,6 +86,7 @@ npm start         # serves API + frontend static files on PORT (default 3000)
 | `DATABASE_URL` | Yes      | —             | PostgreSQL connection string         |
 | `PORT`         | No       | `3000`        | HTTP server port                     |
 | `NODE_ENV`     | No       | `development` | `development`, `production`, `test`  |
+| `DISCOGS_USER_TOKEN` | No | — | Discogs API user token for catalog search and metadata enrichment |
 
 ## Spotify CSV format
 

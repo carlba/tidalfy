@@ -1,4 +1,4 @@
-import { Check, AlertCircle, Archive } from 'lucide-react';
+import { Check, AlertCircle, Archive, Disc, Music2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDuration } from '@/lib/utils';
@@ -7,10 +7,21 @@ import type { Track } from '@/lib/types';
 interface TrackListItemProps {
   track: Track;
   onSearchMatch: (track: Track) => void;
+  onSearchDiscogs: (track: Track) => void;
   onArchive: (track: Track) => void;
 }
 
-export function TrackListItem({ track, onSearchMatch, onArchive }: TrackListItemProps) {
+function discogsResourceUrlToWebUrl(resourceUrl: string | null): string | null {
+  if (!resourceUrl) return null;
+  return resourceUrl.replace('https://api.discogs.com/', 'https://www.discogs.com/');
+}
+
+export function TrackListItem({
+  track,
+  onSearchMatch,
+  onSearchDiscogs,
+  onArchive,
+}: TrackListItemProps) {
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
       <div className="min-w-0 flex-1">
@@ -32,14 +43,25 @@ export function TrackListItem({ track, onSearchMatch, onArchive }: TrackListItem
           {track.releaseDate ? ` · ${track.releaseDate.slice(0, 4)}` : ''}
         </p>
         {track.match ? (
-          <div className="flex items-center gap-1 mt-1">
-            <Check className="h-3 w-3 text-success shrink-0" />
-            <span className="text-xs text-success truncate">
-              {track.match.title} — {track.match.artistCredit}
-              {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
-              {track.match.releaseBarcode ? ` · UPC/EAN: ${track.match.releaseBarcode}` : ''}
-              {track.match.releaseAsin ? ` · ASIN: ${track.match.releaseAsin}` : ''}
-            </span>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <div className="flex items-center gap-1">
+              <Check className="h-3 w-3 text-success shrink-0" />
+              <span className="text-xs text-success truncate">
+                {track.match.title} — {track.match.artistCredit}
+                {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
+              </span>
+            </div>
+            {track.match.releaseId ? (
+              <a
+                href={`https://musicbrainz.org/release/${track.match.releaseId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground hover:bg-muted/80">
+                <Music2 className="h-3.5 w-3.5" />
+                <span className="sr-only">Open MusicBrainz release</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            ) : null}
           </div>
         ) : (
           <div className="flex items-center gap-1 mt-1">
@@ -47,6 +69,27 @@ export function TrackListItem({ track, onSearchMatch, onArchive }: TrackListItem
             <span className="text-xs text-amber-600">No MusicBrainz match</span>
           </div>
         )}
+        {track.discogsMatch ? (
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <div className="flex items-center gap-1">
+              <Check className="h-3 w-3 text-slate-600 shrink-0" />
+              <span className="text-xs text-slate-600 truncate">
+                Discogs: {track.discogsMatch.releaseTitle ?? track.discogsMatch.title}
+              </span>
+            </div>
+            {discogsResourceUrlToWebUrl(track.discogsMatch.resourceUrl) ? (
+              <a
+                href={discogsResourceUrlToWebUrl(track.discogsMatch.resourceUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground hover:bg-muted/80">
+                <Disc className="h-3.5 w-3.5" />
+                <span className="sr-only">Open Discogs release</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
@@ -60,6 +103,9 @@ export function TrackListItem({ track, onSearchMatch, onArchive }: TrackListItem
           onClick={() => onArchive(track)}>
           <Archive className="h-3.5 w-3.5 mr-1" />
           {track.archived ? 'Unarchive' : 'Archive'}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onSearchDiscogs(track)}>
+          {track.discogsMatch ? 'Discogs' : 'Add Discogs'}
         </Button>
         <Button size="sm" variant="outline" onClick={() => onSearchMatch(track)}>
           {track.match ? 'Change' : 'Match'}

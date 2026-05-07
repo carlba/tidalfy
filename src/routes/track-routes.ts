@@ -3,6 +3,7 @@ import { type ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { prisma } from '../lib/db.js';
 import { searchMusicBrainz } from '../lib/musicbrainz.js';
+import { searchDiscogs } from '../lib/discogs.js';
 
 const trackSchema = z.object({
   id: z.string(),
@@ -35,6 +36,22 @@ const trackSchema = z.object({
       selectedAt: z.date(),
     })
     .nullable(),
+  discogsMatch: z
+    .object({
+      discogsReleaseId: z.string(),
+      title: z.string(),
+      artistCredit: z.string(),
+      releaseTitle: z.string().nullable(),
+      releaseDate: z.string().nullable(),
+      releaseCountry: z.string().nullable(),
+      releaseLabel: z.string().nullable(),
+      releaseFormat: z.string().nullable(),
+      releaseBarcode: z.string().nullable(),
+      releaseCoverArtUrl: z.string().nullable(),
+      resourceUrl: z.string().nullable(),
+      selectedAt: z.date(),
+    })
+    .nullable(),
 });
 
 const musicBrainzCandidateSchema = z.object({
@@ -57,6 +74,35 @@ const musicBrainzCandidateSchema = z.object({
   disambiguation: z.string().nullable(),
   isrc: z.string().nullable(),
   score: z.number().nullable(),
+});
+
+const discogsCandidateSchema = z.object({
+  discogsReleaseId: z.string(),
+  title: z.string(),
+  artistCredit: z.string(),
+  releaseTitle: z.string().nullable(),
+  releaseDate: z.string().nullable(),
+  releaseCountry: z.string().nullable(),
+  releaseLabel: z.string().nullable(),
+  releaseFormat: z.string().nullable(),
+  releaseBarcode: z.string().nullable(),
+  releaseCoverArtUrl: z.string().nullable(),
+  resourceUrl: z.string().nullable(),
+});
+
+const discogsMatchSchema = z.object({
+  discogsReleaseId: z.string(),
+  title: z.string(),
+  artistCredit: z.string(),
+  releaseTitle: z.string().nullable(),
+  releaseDate: z.string().nullable(),
+  releaseCountry: z.string().nullable(),
+  releaseLabel: z.string().nullable(),
+  releaseFormat: z.string().nullable(),
+  releaseBarcode: z.string().nullable(),
+  releaseCoverArtUrl: z.string().nullable(),
+  resourceUrl: z.string().nullable(),
+  selectedAt: z.date(),
 });
 
 export async function trackRoutes(app: FastifyInstance) {
@@ -82,7 +128,7 @@ export async function trackRoutes(app: FastifyInstance) {
           batchId: batchId ?? undefined,
         },
         orderBy: [{ addedAt: 'desc' }, { trackName: 'asc' }],
-        include: { match: true },
+        include: { match: true, discogsMatch: true },
       });
       return tracks;
     }
@@ -111,17 +157,85 @@ export async function trackRoutes(app: FastifyInstance) {
       }
 
       const includeAlbum = request.query.includeAlbum === 'true';
-      const albumName = request.query.albumName?.trim() ?? undefined;
+      const albumName = request.query.albumName?.trim();
       const useScoreOnly = request.query.useScoreOnly === 'true';
       const candidates = await searchMusicBrainz(
         track.trackName,
         track.artistNames[0] ?? '',
-        albumName ?? track.albumName,
+        includeAlbum ? albumName : undefined,
         track.releaseDate,
         includeAlbum,
         useScoreOnly
       );
       return candidates;
+    }
+  );
+
+  server.get(
+    '/api/tracks/:id/discogs',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        querystring: z.object({ albumName: z.string().optional() }),
+        response: {
+          200: z.array(discogsCandidateSchema),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const track = await prisma.track.findUnique({ where: { id: request.params.id } });
+      if (!track) {
+        return reply.status(404).send({ error: 'Track not found' });
+      }
+
+      const searchAlbumName = request.query.albumName?.trim() ?? undefined;
+      const candidates = await searchDiscogs(
+        track.trackName,
+        track.artistNames[0] ?? '',
+        searchAlbumName
+      );
+      return candidates;
+    }
+  );
+
+  server.post(
+    '/api/tracks/:id/discogs-match',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        body: z.object({
+          discogsReleaseId: z.string(),
+          title: z.string(),
+          artistCredit: z.string(),
+          releaseTitle: z.string().nullable(),
+          releaseDate: z.string().nullable(),
+          releaseCountry: z.string().nullable(),
+          releaseLabel: z.string().nullable(),
+          releaseFormat: z.string().nullable(),
+          releaseBarcode: z.string().nullable(),
+          releaseCoverArtUrl: z.string().nullable(),
+          resourceUrl: z.string().nullable(),
+        }),
+        response: {
+          200: discogsMatchSchema,
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const track = await prisma.track.findUnique({ where: { id: request.params.id } });
+      if (!track) {
+        return reply.status(404).send({ error: 'Track not found' });
+      }
+
+      const match = await prisma.discogsMatch.upsert({
+        where: { trackId: track.id },
+        update: { ...request.body, selectedAt: new Date() },
+        create: { trackId: track.id, ...request.body },
+      });
+
+      return match;
     }
   );
 

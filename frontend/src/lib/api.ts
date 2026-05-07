@@ -1,4 +1,6 @@
 import type {
+  DiscogsCandidate,
+  DiscogsMatch,
   ImportBatch,
   ImportResult,
   MusicBrainzCandidate,
@@ -47,12 +49,18 @@ export async function searchMusicBrainz(
   albumName = '',
   useScoreOnly = false
 ): Promise<MusicBrainzCandidate[]> {
-  const query = new URLSearchParams({
-    includeAlbum: String(includeAlbum),
-    albumName,
-    useScoreOnly: String(useScoreOnly),
-  });
-  const response = await fetch(`/api/tracks/${trackId}/musicbrainz?${query}`);
+  const query = new URLSearchParams();
+  query.set('includeAlbum', String(includeAlbum));
+  if (albumName.trim()) {
+    query.set('albumName', albumName.trim());
+  }
+  query.set('useScoreOnly', String(useScoreOnly));
+
+  const queryString = query.toString();
+  const url = queryString
+    ? `/api/tracks/${trackId}/musicbrainz?${queryString}`
+    : `/api/tracks/${trackId}/musicbrainz`;
+  const response = await fetch(url);
   return handleResponse<MusicBrainzCandidate[]>(response);
 }
 
@@ -77,6 +85,30 @@ export async function saveMatch(
     }),
   });
   return handleResponse<MusicBrainzMatch>(response);
+}
+
+export async function searchDiscogs(trackId: string, albumName = ''): Promise<DiscogsCandidate[]> {
+  const query = new URLSearchParams();
+  if (albumName.trim()) {
+    query.set('albumName', albumName.trim());
+  }
+  const url = query.toString()
+    ? `/api/tracks/${trackId}/discogs?${query}`
+    : `/api/tracks/${trackId}/discogs`;
+  const response = await fetch(url);
+  return handleResponse<DiscogsCandidate[]>(response);
+}
+
+export async function saveDiscogsMatch(
+  trackId: string,
+  candidate: DiscogsCandidate
+): Promise<DiscogsMatch> {
+  const response = await fetch(`/api/tracks/${trackId}/discogs-match`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(candidate),
+  });
+  return handleResponse<DiscogsMatch>(response);
 }
 
 async function setTrackArchived(trackId: string, archived: boolean): Promise<void> {

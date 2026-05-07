@@ -6,11 +6,18 @@ import type { Track } from '@/lib/types';
 interface TrackListProps {
   tracks: Track[];
   onSearchMatch: (track: Track) => void;
+  onSearchDiscogs: (track: Track) => void;
   onArchive: (track: Track) => void;
   emptyMessage?: string;
 }
 
-export function TrackList({ tracks, onSearchMatch, onArchive, emptyMessage }: TrackListProps) {
+export function TrackList({
+  tracks,
+  onSearchMatch,
+  onSearchDiscogs,
+  onArchive,
+  emptyMessage,
+}: TrackListProps) {
   if (tracks.length === 0) {
     return (
       <EmptyState
@@ -27,6 +34,7 @@ export function TrackList({ tracks, onSearchMatch, onArchive, emptyMessage }: Tr
           key={track.id}
           track={track}
           onSearchMatch={onSearchMatch}
+          onSearchDiscogs={onSearchDiscogs}
           onArchive={onArchive}
         />
       ))}

@@ -19,6 +19,35 @@ export interface MusicBrainzMatch {
   selectedAt: string;
 }
 
+export interface DiscogsMatch {
+  discogsReleaseId: string;
+  title: string;
+  artistCredit: string;
+  releaseTitle: string | null;
+  releaseDate: string | null;
+  releaseCountry: string | null;
+  releaseLabel: string | null;
+  releaseFormat: string | null;
+  releaseBarcode: string | null;
+  releaseCoverArtUrl: string | null;
+  resourceUrl: string | null;
+  selectedAt: string;
+}
+
+export interface DiscogsCandidate {
+  discogsReleaseId: string;
+  title: string;
+  artistCredit: string;
+  releaseTitle: string | null;
+  releaseDate: string | null;
+  releaseCountry: string | null;
+  releaseLabel: string | null;
+  releaseFormat: string | null;
+  releaseBarcode: string | null;
+  releaseCoverArtUrl: string | null;
+  resourceUrl: string | null;
+}
+
 export interface Track {
   id: string;
   batchId: string;
@@ -35,6 +64,7 @@ export interface Track {
   recordLabel: string | null;
   archived: boolean;
   match: MusicBrainzMatch | null;
+  discogsMatch: DiscogsMatch | null;
 }
 
 export interface MusicBrainzCandidate {

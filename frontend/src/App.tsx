@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ImportUpload } from '@/components/ImportUpload';
 import { TrackList } from '@/components/TrackList';
 import { MusicBrainzDialog } from '@/components/MusicBrainzDialog';
+import { DiscogsDialog } from '@/components/DiscogsDialog';
 import { BatchList } from '@/components/BatchList';
 import { StatusTabs } from '@/components/StatusTabs';
 import {
@@ -15,7 +16,13 @@ import {
   type TrackStatus,
   unarchiveTrack,
 } from '@/lib/api';
-import type { ImportBatch, ImportResult, MusicBrainzCandidate, Track } from '@/lib/types';
+import type {
+  DiscogsMatch,
+  ImportBatch,
+  ImportResult,
+  MusicBrainzCandidate,
+  Track,
+} from '@/lib/types';
 
 export function App() {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
@@ -23,6 +30,7 @@ export function App() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [trackStatus, setTrackStatus] = useState<TrackStatus>('active');
   const [activeMatchTrack, setActiveMatchTrack] = useState<Track | null>(null);
+  const [activeDiscogsTrack, setActiveDiscogsTrack] = useState<Track | null>(null);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
   const [importErrors, setImportErrors] = useState<ImportResult['errors']>([]);
   const [showImport, setShowImport] = useState(false);
@@ -75,6 +83,16 @@ export function App() {
     );
   }
 
+  function handleDiscogsSaved(trackId: string, candidate: DiscogsMatch) {
+    setTracks(prev =>
+      prev.map(t =>
+        t.id === trackId
+          ? { ...t, discogsMatch: { ...candidate, selectedAt: new Date().toISOString() } }
+          : t
+      )
+    );
+  }
+
   async function handleArchiveTrack(track: Track) {
     try {
       if (track.archived) {
@@ -93,7 +111,7 @@ export function App() {
     }
   }
 
-  const matchedCount = tracks.filter(t => t.match !== null).length;
+  const matchedCount = tracks.filter(t => t.match !== null || t.discogsMatch !== null).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -195,6 +213,7 @@ export function App() {
                       <TrackList
                         tracks={tracks}
                         onSearchMatch={setActiveMatchTrack}
+                        onSearchDiscogs={setActiveDiscogsTrack}
                         onArchive={handleArchiveTrack}
                         emptyMessage={
                           trackStatus === 'archived'
@@ -214,10 +233,16 @@ export function App() {
       </main>
 
       <MusicBrainzDialog
-        key={activeMatchTrack?.id ?? 'empty'}
+        key={`mb-${activeMatchTrack?.id ?? 'empty'}`}
         track={activeMatchTrack}
         onClose={() => setActiveMatchTrack(null)}
         onMatchSaved={handleMatchSaved}
+      />
+      <DiscogsDialog
+        key={`discogs-${activeDiscogsTrack?.id ?? 'empty'}`}
+        track={activeDiscogsTrack}
+        onClose={() => setActiveDiscogsTrack(null)}
+        onMatchSaved={handleDiscogsSaved}
       />
     </div>
   );
