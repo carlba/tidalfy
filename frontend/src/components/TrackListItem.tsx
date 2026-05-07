@@ -16,6 +16,10 @@ function discogsResourceUrlToWebUrl(resourceUrl: string | null): string | null {
   return resourceUrl.replace('https://api.discogs.com/', 'https://www.discogs.com/');
 }
 
+function truncateText(value: string, maxLength = 40): string {
+  return value.length <= maxLength ? value : `${value.slice(0, maxLength - 3)}...`;
+}
+
 export function TrackListItem({
   track,
   onSearchMatch,
@@ -29,6 +33,8 @@ export function TrackListItem({
         day: 'numeric',
       })
     : null;
+
+  const albumName = track.albumName ? truncateText(track.albumName, 40) : '';
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
@@ -49,7 +55,8 @@ export function TrackListItem({
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {track.artistNames.join(', ')}{track.albumName ? ` · ${track.albumName}` : ''}
+              {track.artistNames.join(', ')}
+              {albumName ? ` · ${albumName}` : ''}
             </p>
           </div>
         </div>
