@@ -32,6 +32,7 @@ export function App() {
   const [activeMatchTrack, setActiveMatchTrack] = useState<Track | null>(null);
   const [activeDiscogsTrack, setActiveDiscogsTrack] = useState<Track | null>(null);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
+  const [showUnmatchedOnly, setShowUnmatchedOnly] = useState(false);
   const [importErrors, setImportErrors] = useState<ImportResult['errors']>([]);
   const [showImport, setShowImport] = useState(false);
 
@@ -112,6 +113,9 @@ export function App() {
   }
 
   const matchedCount = tracks.filter(t => t.match !== null || t.discogsMatch !== null).length;
+  const displayedTracks = showUnmatchedOnly
+    ? tracks.filter(t => t.match === null && t.discogsMatch === null)
+    : tracks;
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,6 +181,15 @@ export function App() {
                     {tracks.length - matchedCount > 0 && (
                       <Badge variant="outline">{tracks.length - matchedCount} unmatched</Badge>
                     )}
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={showUnmatchedOnly}
+                        onChange={event => setShowUnmatchedOnly(event.target.checked)}
+                        className="h-4 w-4 rounded border-muted-foreground accent-primary focus:ring-primary"
+                      />
+                      Show only unmatched
+                    </label>
                   </div>
                 )}
 
@@ -211,16 +224,18 @@ export function App() {
                       </div>
                     ) : (
                       <TrackList
-                        tracks={tracks}
+                        tracks={displayedTracks}
                         onSearchMatch={setActiveMatchTrack}
                         onSearchDiscogs={setActiveDiscogsTrack}
                         onArchive={handleArchiveTrack}
                         emptyMessage={
-                          trackStatus === 'archived'
-                            ? 'No archived tracks yet.'
-                            : trackStatus === 'all'
-                              ? 'No tracks found.'
-                              : 'No active tracks yet.'
+                          showUnmatchedOnly
+                            ? 'No unmatched tracks found.'
+                            : trackStatus === 'archived'
+                              ? 'No archived tracks yet.'
+                              : trackStatus === 'all'
+                                ? 'No tracks found.'
+                                : 'No active tracks yet.'
                         }
                       />
                     )}

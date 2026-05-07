@@ -76,6 +76,23 @@ function normalizeResultFormat(format: string | string[] | undefined): string | 
   return format.trim() || null;
 }
 
+function deriveReleaseFormat(format: string | string[] | undefined): string | null {
+  const normalized = normalizeResultFormat(format)?.toLowerCase() ?? '';
+  if (!normalized) {
+    return null;
+  }
+  if (/compilation|various artists|various|soundtrack/.test(normalized)) {
+    return 'Compilation';
+  }
+  if (/\bsingle\b|\b7\b|7"|7’|12"|12’|\b45 rpm\b|\bpromo\b/.test(normalized)) {
+    return 'Single';
+  }
+  if (/\balbum\b|\blp\b|\blong play\b/.test(normalized)) {
+    return 'Album';
+  }
+  return null;
+}
+
 function normalizeString(value: string | null | undefined): string | null {
   if (typeof value !== 'string') {
     return null;
@@ -127,7 +144,8 @@ function buildCandidate(
   artistCredit: string
 ): DiscogsCandidate {
   const releaseLabel = result.label?.[0] ?? null;
-  const releaseFormat = normalizeResultFormat(result.format);
+  const releaseFormat = deriveReleaseFormat(result.format);
+  const releaseType = result.type ?? null;
   const releaseCoverArtUrl = result.cover_image ?? result.thumb ?? null;
   const releaseDate = normalizeString(result.year ? String(result.year) : null);
   const rawTitle = normalizeString(result.title) ?? null;
@@ -140,11 +158,6 @@ function buildCandidate(
   const isCompilation = /compilation|various artists|various|soundtrack/i.test(normalizedText);
   const isSingle = /\bsingle\b|\b7\b|7"|7’|12"|12’|\b45 rpm\b|\bpromo\b/i.test(normalizedText);
   const isAlbum = /\balbum\b|\blp\b|\blong play\b/i.test(releaseFormat ?? '');
-
-  LOGGER.debug(
-    { releaseDate, parsedArtist: parsedTitle.artist, candidateArtistCredit },
-    'Discogs artist parsing result'
-  );
 
   const rawBarcode = Array.isArray(result.barcode)
     ? result.barcode.filter(Boolean)
@@ -163,7 +176,7 @@ function buildCandidate(
     releaseDate,
     releaseCountry: result.country ?? null,
     releaseLabel,
-    releaseType: result.type ?? null,
+    releaseType,
     releaseFormat,
     releaseBarcode: normalizedBarcode.primary,
     releaseBarcodeRaw,
@@ -177,21 +190,17 @@ function buildCandidate(
   };
 }
 
-function mergeCandidates(
-  primary: DiscogsCandidate[],
-  secondary: DiscogsCandidate[]
-): DiscogsCandidate[] {
+function mergeOrderedCandidates(groups: DiscogsCandidate[][]): DiscogsCandidate[] {
   const seen = new Set<string>();
-  return [
-    ...primary,
-    ...secondary.filter(candidate => {
+  return groups.flatMap(group =>
+    group.filter(candidate => {
       if (seen.has(candidate.discogsReleaseId)) {
         return false;
       }
       seen.add(candidate.discogsReleaseId);
       return true;
-    }),
-  ];
+    })
+  );
 }
 
 async function runDiscogsSearch(
@@ -222,20 +231,6 @@ async function runDiscogsSearch(
     .json<unknown>();
 
   const parsed = discogsSearchResponseSchema.safeParse(response);
-  if (parsed.success) {
-    LOGGER.debug(
-      {
-        discogsBarcodeFields: parsed.data.results.map(result => ({
-          id: result.id,
-          barcode: result.barcode ?? null,
-          barcodes: result.barcodes ?? null,
-        })),
-      },
-      'Received Discogs barcode fields from search response'
-    );
-  } else {
-    LOGGER.debug({ discogsResponse: response }, 'Received Discogs API response');
-  }
   if (!parsed.success) {
     return [];
   }
@@ -254,94 +249,75 @@ async function runDiscogsSearch(
 export async function searchDiscogs(
   trackName: string,
   artistName: string,
-  albumName?: string
+  albumName?: string,
+  extended = false
 ): Promise<DiscogsCandidate[]> {
   const token = getDiscogsToken();
   const title = trackName || artistName || 'Discogs Search';
   const artistCredit = artistName || 'Unknown Artist';
+  const normalizedTrackName = trackName.replace(/['’]/g, '');
 
-  const baseParams = new URLSearchParams({ per_page: '50' });
-  if (artistName) {
-    baseParams.set('artist', artistName);
-  }
-  if (trackName) {
-    baseParams.set('track', trackName);
-  }
-  if (albumName) {
-    baseParams.set('release_title', albumName);
-  }
-
-  const albumQueryText = [trackName, artistName].filter(Boolean).join(' ').trim();
-  const albumExactParams = new URLSearchParams({
-    q: albumQueryText,
-    type: 'all',
+  const albumMasterParams = new URLSearchParams({
+    per_page: '50',
+    type: 'master',
     format: 'Album',
     format_exact: 'Album',
-    per_page: '50',
   });
-  const albumExactMasterParams = new URLSearchParams(albumExactParams);
-  albumExactMasterParams.set('type', 'master');
-
-  const baseMasterParams = new URLSearchParams(baseParams);
-  baseMasterParams.set('type', 'master');
-
-  const albumCandidates = await runDiscogsSearch(token, albumExactParams, title, artistCredit);
-  const baseCandidates = await runDiscogsSearch(token, baseParams, title, artistCredit);
-  const albumMasterCandidates = await runDiscogsSearch(
-    token,
-    albumExactMasterParams,
-    title,
-    artistCredit
-  );
-  const baseMasterCandidates = await runDiscogsSearch(token, baseMasterParams, title, artistCredit);
-
-  const masterCandidates = mergeCandidates(albumMasterCandidates, baseMasterCandidates);
-  const releaseCandidates = mergeCandidates(albumCandidates, baseCandidates);
-  if (masterCandidates.length > 0) {
-    return mergeCandidates(masterCandidates, releaseCandidates);
+  if (artistName) {
+    albumMasterParams.set('artist', artistName);
   }
-  if (releaseCandidates.length > 0) {
-    return releaseCandidates;
+  if (normalizedTrackName) {
+    albumMasterParams.set('track', normalizedTrackName);
+  }
+  if (albumName) {
+    albumMasterParams.set('release_title', albumName);
   }
 
-  const queryParams = new URLSearchParams({
-    q: albumQueryText,
+  const albumReleaseParams = new URLSearchParams({
     per_page: '50',
+    type: 'release',
+    format: 'Album',
   });
-  const queryMasterParams = new URLSearchParams(queryParams);
-  queryMasterParams.set('type', 'master');
-
-  const queryMasterCandidates = await runDiscogsSearch(
-    token,
-    queryMasterParams,
-    title,
-    artistCredit
-  );
-  if (queryMasterCandidates.length > 0) {
-    return queryMasterCandidates;
+  if (artistName) {
+    albumReleaseParams.set('artist', artistName);
+  }
+  if (normalizedTrackName) {
+    albumReleaseParams.set('track', normalizedTrackName);
+  }
+  if (albumName) {
+    albumReleaseParams.set('release_title', albumName);
   }
 
-  const queryCandidates = await runDiscogsSearch(token, queryParams, title, artistCredit);
-  if (queryCandidates.length > 0) {
-    return queryCandidates;
-  }
-
-  const trackOnlyParams = new URLSearchParams({
-    q: trackName,
+  const singlesQueryText = [normalizedTrackName, artistName].filter(Boolean).join(' ').trim();
+  const singlesMasterParams = new URLSearchParams({
+    q: singlesQueryText,
     per_page: '50',
+    type: 'master',
+    format: 'Single',
+    format_exact: 'Single',
   });
-  const trackOnlyMasterParams = new URLSearchParams(trackOnlyParams);
-  trackOnlyMasterParams.set('type', 'master');
 
-  const trackOnlyMasterCandidates = await runDiscogsSearch(
-    token,
-    trackOnlyMasterParams,
-    title,
-    artistCredit
-  );
-  if (trackOnlyMasterCandidates.length > 0) {
-    return trackOnlyMasterCandidates;
-  }
+  const singlesReleaseParams = new URLSearchParams({
+    q: singlesQueryText,
+    per_page: '50',
+    format: 'Single',
+  });
 
-  return runDiscogsSearch(token, trackOnlyParams, title, artistCredit);
+  const allSearches = await Promise.all([
+    runDiscogsSearch(token, albumMasterParams, title, artistCredit),
+    extended
+      ? runDiscogsSearch(token, albumReleaseParams, title, artistCredit)
+      : Promise.resolve([]),
+    runDiscogsSearch(token, singlesMasterParams, title, artistCredit),
+    extended
+      ? runDiscogsSearch(token, singlesReleaseParams, title, artistCredit)
+      : Promise.resolve([]),
+  ]);
+
+  LOGGER.debug({ allSearches });
+
+  const mergedCandidates = mergeOrderedCandidates(allSearches);
+  return mergedCandidates;
+
+  return [];
 }

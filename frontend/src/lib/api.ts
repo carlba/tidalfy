@@ -45,6 +45,8 @@ export async function fetchTracks(
 
 export async function searchMusicBrainz(
   trackId: string,
+  searchTitle = '',
+  searchArtist = '',
   includeAlbum = false,
   albumName = '',
   useScoreOnly = false,
@@ -52,6 +54,12 @@ export async function searchMusicBrainz(
   noSecondaryType = true
 ): Promise<MusicBrainzCandidate[]> {
   const query = new URLSearchParams();
+  if (searchTitle.trim()) {
+    query.set('searchTitle', searchTitle.trim());
+  }
+  if (searchArtist.trim()) {
+    query.set('searchArtist', searchArtist.trim());
+  }
   if (includeAlbum) {
     query.set('includeAlbum', String(includeAlbum));
   }
@@ -93,10 +101,25 @@ export async function saveMatch(
   return handleResponse<MusicBrainzMatch>(response);
 }
 
-export async function searchDiscogs(trackId: string, albumName = ''): Promise<DiscogsCandidate[]> {
+export async function searchDiscogs(
+  trackId: string,
+  searchTitle = '',
+  searchArtist = '',
+  albumName = '',
+  extended = false
+): Promise<DiscogsCandidate[]> {
   const query = new URLSearchParams();
+  if (searchTitle.trim()) {
+    query.set('searchTitle', searchTitle.trim());
+  }
+  if (searchArtist.trim()) {
+    query.set('searchArtist', searchArtist.trim());
+  }
   if (albumName.trim()) {
     query.set('albumName', albumName.trim());
+  }
+  if (extended) {
+    query.set('extended', 'true');
   }
   const url = query.toString()
     ? `/api/tracks/${trackId}/discogs?${query}`

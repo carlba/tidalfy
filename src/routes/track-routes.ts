@@ -87,6 +87,7 @@ const discogsCandidateSchema = z.object({
   releaseDate: z.string().nullable(),
   releaseCountry: z.string().nullable(),
   releaseLabel: z.string().nullable(),
+  releaseType: z.string().nullable(),
   releaseFormat: z.string().nullable(),
   releaseBarcode: z.string().nullable(),
   releaseBarcodeRaw: z.array(z.string()),
@@ -149,6 +150,8 @@ export async function trackRoutes(app: FastifyInstance) {
       schema: {
         params: z.object({ id: z.string() }),
         querystring: z.object({
+          searchTitle: z.string().optional(),
+          searchArtist: z.string().optional(),
           includeAlbum: z.string().optional(),
           albumName: z.string().optional(),
           useScoreOnly: z.string().optional(),
@@ -167,14 +170,16 @@ export async function trackRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: 'Track not found' });
       }
 
+      const searchTitle = request.query.searchTitle?.trim();
+      const searchArtist = request.query.searchArtist?.trim();
       const includeAlbum = request.query.includeAlbum === 'true';
       const albumName = request.query.albumName?.trim();
       const useScoreOnly = request.query.useScoreOnly === 'true';
       const onlyAlbum = request.query.onlyAlbum !== 'false';
       const noSecondaryType = request.query.noSecondaryType !== 'false';
       const candidates = await searchMusicBrainz(
-        track.trackName,
-        track.artistNames[0] ?? '',
+        searchTitle ?? track.trackName,
+        searchArtist ?? track.artistNames[0] ?? '',
         includeAlbum ? albumName : undefined,
         track.releaseDate,
         includeAlbum,
@@ -191,7 +196,12 @@ export async function trackRoutes(app: FastifyInstance) {
     {
       schema: {
         params: z.object({ id: z.string() }),
-        querystring: z.object({ albumName: z.string().optional() }),
+        querystring: z.object({
+          searchTitle: z.string().optional(),
+          searchArtist: z.string().optional(),
+          albumName: z.string().optional(),
+          extended: z.string().optional(),
+        }),
         response: {
           200: z.array(discogsCandidateSchema),
           404: z.object({ error: z.string() }),
@@ -204,11 +214,15 @@ export async function trackRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: 'Track not found' });
       }
 
+      const searchTitle = request.query.searchTitle?.trim();
+      const searchArtist = request.query.searchArtist?.trim();
       const searchAlbumName = request.query.albumName?.trim() ?? undefined;
+      const extended = request.query.extended === 'true';
       const candidates = await searchDiscogs(
-        track.trackName,
-        track.artistNames[0] ?? '',
-        searchAlbumName
+        searchTitle ?? track.trackName,
+        searchArtist ?? track.artistNames[0] ?? '',
+        searchAlbumName,
+        extended
       );
       return candidates;
     }
@@ -227,6 +241,7 @@ export async function trackRoutes(app: FastifyInstance) {
           releaseDate: z.string().nullable(),
           releaseCountry: z.string().nullable(),
           releaseLabel: z.string().nullable(),
+          releaseType: z.string().nullable(),
           releaseFormat: z.string().nullable(),
           releaseBarcode: z.string().nullable(),
           releaseBarcodeRaw: z.array(z.string()),

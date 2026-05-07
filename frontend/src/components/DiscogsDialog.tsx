@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search, Loader2, Check } from 'lucide-react';
 import {
   Dialog,
@@ -24,7 +24,11 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [savingReleaseId, setSavingReleaseId] = useState<string | null>(null);
+  const [searchTitle, setSearchTitle] = useState<string>(track?.trackName ?? '');
+  const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames[0] ?? '');
   const [albumFilter, setAlbumFilter] = useState<string>('');
+  const [extended, setExtended] = useState(false);
+  const [sortByDate, setSortByDate] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
 
   async function handleSearch() {
@@ -35,7 +39,15 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
 
     try {
       const searchAlbumName = albumFilter.trim() || undefined;
-      const results = await searchDiscogs(track.id, searchAlbumName);
+      const searchTitleValue = searchTitle.trim() || undefined;
+      const searchArtistValue = searchArtist.trim() || undefined;
+      const results = await searchDiscogs(
+        track.id,
+        searchTitleValue,
+        searchArtistValue,
+        searchAlbumName,
+        extended
+      );
       setCandidates(results);
       setHasSearched(true);
     } catch (error) {
@@ -59,15 +71,49 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
     }
   }
 
+  useEffect(() => {
+    setSearchTitle(track?.trackName ?? '');
+    setSearchArtist(track?.artistNames[0] ?? '');
+    setExtended(false);
+    setSortByDate(true);
+  }, [track]);
+
   function handleOpenChange(open: boolean) {
     if (!open) {
       onClose();
       setCandidates([]);
       setSearchError(null);
+      setSearchTitle(track?.trackName ?? '');
+      setSearchArtist(track?.artistNames[0] ?? '');
       setAlbumFilter('');
+      setExtended(false);
+      setSortByDate(true);
       setHasSearched(false);
     }
   }
+
+  const sortedCandidates = useMemo(() => {
+    if (!sortByDate) {
+      return candidates;
+    }
+
+    return [...candidates].sort((left, right) => {
+      const leftDate = left.releaseDate ?? '';
+      const rightDate = right.releaseDate ?? '';
+
+      if (!leftDate && !rightDate) {
+        return 0;
+      }
+      if (!leftDate) {
+        return 1;
+      }
+      if (!rightDate) {
+        return -1;
+      }
+
+      return leftDate.localeCompare(rightDate);
+    });
+  }, [candidates, sortByDate]);
 
   return (
     <Dialog open={track !== null} onOpenChange={handleOpenChange}>
@@ -96,9 +142,27 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
           <fieldset className="rounded-lg border border-border bg-muted/5 p-4">
             <legend className="text-sm font-semibold text-foreground">Search options</legend>
             <p className="text-sm text-muted-foreground mb-3">
-              Spotify album name is optional. Leave it blank to search Discogs by track and artist
-              only.
+              Edit the title used for search. Spotify album name is optional and only used if
+              provided.
             </p>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium">Search title</span>
+              <Input
+                type="text"
+                value={searchTitle}
+                onChange={event => setSearchTitle(event.target.value)}
+                placeholder={track?.trackName ?? 'Type title to search'}
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium">Search artist</span>
+              <Input
+                type="text"
+                value={searchArtist}
+                onChange={event => setSearchArtist(event.target.value)}
+                placeholder={track?.artistNames[0] ?? 'Type artist to search'}
+              />
+            </label>
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium">Spotify album</span>
               <Input
@@ -111,6 +175,24 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
                     : 'Type album name to filter results'
                 }
               />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={extended}
+                onChange={event => setExtended(event.target.checked)}
+                className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+              />
+              <span className="font-medium">Include non-master albums and singles</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={sortByDate}
+                onChange={event => setSortByDate(event.target.checked)}
+                className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+              />
+              <span className="font-medium">Sort results by release date</span>
             </label>
             <Button
               className="mt-4"
@@ -133,17 +215,17 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
 
           {searchError && <p className="text-sm text-destructive">{searchError}</p>}
 
-          {hasSearched && candidates.length === 0 && (
+          {hasSearched && sortedCandidates.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
               No Discogs matches found. Try a different album filter.
             </p>
           )}
 
-          {candidates.length > 0 && (
+          {sortedCandidates.length > 0 && (
             <div className="flex flex-col overflow-hidden rounded-lg border">
               <div className="overflow-y-auto max-h-[45vh] min-h-0">
                 <ul className="divide-y divide-border">
-                  {candidates.map(candidate => (
+                  {sortedCandidates.map(candidate => (
                     <li key={candidate.discogsReleaseId} className="border-b last:border-b-0">
                       <DiscogsCandidateItem
                         candidate={candidate}

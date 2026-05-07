@@ -7,6 +7,14 @@ interface DiscogsCandidateDetailsProps {
 
 export function DiscogsCandidateDetails({ candidate }: DiscogsCandidateDetailsProps) {
   const title = candidate.releaseTitle ?? candidate.title;
+  const releaseCategory = candidate.isAlbum
+    ? 'Album'
+    : candidate.isSingle
+      ? 'Single'
+      : candidate.isCompilation
+        ? 'Compilation'
+        : candidate.releaseFormat;
+  const showReleaseFormat = candidate.releaseFormat && candidate.releaseFormat !== releaseCategory;
 
   return (
     <>
@@ -18,8 +26,9 @@ export function DiscogsCandidateDetails({ candidate }: DiscogsCandidateDetailsPr
         </DetailText>
       )}
       {candidate.isMaster && <DetailText>Master release</DetailText>}
+      {releaseCategory && <DetailText>{releaseCategory}</DetailText>}
       {candidate.releaseLabel && <DetailText>{candidate.releaseLabel}</DetailText>}
-      {candidate.releaseFormat && <DetailText>{candidate.releaseFormat}</DetailText>}
+      {showReleaseFormat && <DetailText>{candidate.releaseFormat}</DetailText>}
       {candidate.releaseBarcode && <DetailText>EAN: {candidate.releaseBarcode}</DetailText>}
       {candidate.isrc && <DetailText>ISRC: {candidate.isrc}</DetailText>}
     </>

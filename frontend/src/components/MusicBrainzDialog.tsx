@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Music, Loader2, Check } from 'lucide-react';
 import {
   Dialog,
@@ -41,6 +41,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [searchError, setSearchError] = useState<string | null>(null);
   const [savingMbid, setSavingMbid] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchTitle, setSearchTitle] = useState<string>(track?.trackName ?? '');
+  const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames[0] ?? '');
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
   const [useScoreOnly, setUseScoreOnly] = useState(false);
@@ -55,6 +57,11 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [secondaryTypeFilterExact, setSecondaryTypeFilterExact] = useState(false);
   const [expandedMbids, setExpandedMbids] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    setSearchTitle(track?.trackName ?? '');
+    setSearchArtist(track?.artistNames[0] ?? '');
+  }, [track]);
+
   const albumFilterValue = albumFilter ?? track?.albumName ?? '';
 
   async function handleSearch() {
@@ -65,6 +72,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
     try {
       const results = await searchMusicBrainz(
         track.id,
+        searchTitle,
+        searchArtist,
         includeAlbum,
         includeAlbum ? albumFilterValue : '',
         useScoreOnly,
@@ -109,6 +118,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setSearchOnlyAlbum(true);
       setSearchNoSecondaryType(true);
       setExpandedMbids(new Set());
+      setSearchTitle(track?.trackName ?? '');
+      setSearchArtist(track?.artistNames[0] ?? '');
     }
   }
 
@@ -194,9 +205,27 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
           <fieldset className="rounded-lg border border-border bg-muted/5 p-4">
             <legend className="text-sm font-semibold text-foreground">Search options</legend>
             <p className="text-sm text-muted-foreground mb-3">
-              Spotify album name is prefilled from the selected track. Enable the filter to use it
-              in the MusicBrainz query.
+              Edit the title used for search. Spotify album name is prefilled from the selected
+              track and can be optionally applied.
             </p>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium">Search title</span>
+              <Input
+                type="text"
+                value={searchTitle}
+                onChange={event => setSearchTitle(event.target.value)}
+                placeholder={track?.trackName ?? 'Type title to search'}
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium">Search artist</span>
+              <Input
+                type="text"
+                value={searchArtist}
+                onChange={event => setSearchArtist(event.target.value)}
+                placeholder={track?.artistNames[0] ?? 'Type artist to search'}
+              />
+            </label>
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium">Spotify album</span>
               <Input
