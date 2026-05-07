@@ -47,14 +47,20 @@ export async function searchMusicBrainz(
   trackId: string,
   includeAlbum = false,
   albumName = '',
-  useScoreOnly = false
+  useScoreOnly = false,
+  onlyAlbum = true,
+  noSecondaryType = true
 ): Promise<MusicBrainzCandidate[]> {
   const query = new URLSearchParams();
-  query.set('includeAlbum', String(includeAlbum));
+  if (includeAlbum) {
+    query.set('includeAlbum', String(includeAlbum));
+  }
   if (albumName.trim()) {
     query.set('albumName', albumName.trim());
   }
   query.set('useScoreOnly', String(useScoreOnly));
+  query.set('onlyAlbum', String(onlyAlbum));
+  query.set('noSecondaryType', String(noSecondaryType));
 
   const queryString = query.toString();
   const url = queryString
@@ -103,10 +109,11 @@ export async function saveDiscogsMatch(
   trackId: string,
   candidate: DiscogsCandidate
 ): Promise<DiscogsMatch> {
+  const { isMaster, ...payload } = candidate;
   const response = await fetch(`/api/tracks/${trackId}/discogs-match`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(candidate),
+    body: JSON.stringify(payload),
   });
   return handleResponse<DiscogsMatch>(response);
 }

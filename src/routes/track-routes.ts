@@ -47,6 +47,8 @@ const trackSchema = z.object({
       releaseLabel: z.string().nullable(),
       releaseFormat: z.string().nullable(),
       releaseBarcode: z.string().nullable(),
+      releaseBarcodeRaw: z.array(z.string()),
+      releaseEans: z.array(z.string()),
       releaseCoverArtUrl: z.string().nullable(),
       resourceUrl: z.string().nullable(),
       selectedAt: z.date(),
@@ -86,8 +88,11 @@ const discogsCandidateSchema = z.object({
   releaseLabel: z.string().nullable(),
   releaseFormat: z.string().nullable(),
   releaseBarcode: z.string().nullable(),
+  releaseBarcodeRaw: z.array(z.string()),
+  releaseEans: z.array(z.string()),
   releaseCoverArtUrl: z.string().nullable(),
   resourceUrl: z.string().nullable(),
+  isMaster: z.boolean(),
 });
 
 const discogsMatchSchema = z.object({
@@ -100,6 +105,8 @@ const discogsMatchSchema = z.object({
   releaseLabel: z.string().nullable(),
   releaseFormat: z.string().nullable(),
   releaseBarcode: z.string().nullable(),
+  releaseBarcodeRaw: z.array(z.string()),
+  releaseEans: z.array(z.string()),
   releaseCoverArtUrl: z.string().nullable(),
   resourceUrl: z.string().nullable(),
   selectedAt: z.date(),
@@ -143,6 +150,8 @@ export async function trackRoutes(app: FastifyInstance) {
           includeAlbum: z.string().optional(),
           albumName: z.string().optional(),
           useScoreOnly: z.string().optional(),
+          onlyAlbum: z.string().optional(),
+          noSecondaryType: z.string().optional(),
         }),
         response: {
           200: z.array(musicBrainzCandidateSchema),
@@ -159,13 +168,17 @@ export async function trackRoutes(app: FastifyInstance) {
       const includeAlbum = request.query.includeAlbum === 'true';
       const albumName = request.query.albumName?.trim();
       const useScoreOnly = request.query.useScoreOnly === 'true';
+      const onlyAlbum = request.query.onlyAlbum !== 'false';
+      const noSecondaryType = request.query.noSecondaryType !== 'false';
       const candidates = await searchMusicBrainz(
         track.trackName,
         track.artistNames[0] ?? '',
         includeAlbum ? albumName : undefined,
         track.releaseDate,
         includeAlbum,
-        useScoreOnly
+        useScoreOnly,
+        onlyAlbum,
+        noSecondaryType
       );
       return candidates;
     }
@@ -214,6 +227,8 @@ export async function trackRoutes(app: FastifyInstance) {
           releaseLabel: z.string().nullable(),
           releaseFormat: z.string().nullable(),
           releaseBarcode: z.string().nullable(),
+          releaseBarcodeRaw: z.array(z.string()),
+          releaseEans: z.array(z.string()),
           releaseCoverArtUrl: z.string().nullable(),
           resourceUrl: z.string().nullable(),
         }),

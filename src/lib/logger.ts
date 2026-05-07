@@ -1,4 +1,4 @@
-import pino, { stdSerializers } from 'pino';
+import pino from 'pino';
 
 export function isNonNullable<T>(value: T): value is NonNullable<T> {
   return value !== null && value !== undefined;

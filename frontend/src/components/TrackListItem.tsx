@@ -55,7 +55,7 @@ export function TrackListItem({
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {track.artistNames.join(', ')}
+              <strong className="font-semibold">{track.artistNames.join(', ')}</strong>
               {albumName ? ` · ${albumName}` : ''}
             </p>
           </div>

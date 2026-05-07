@@ -44,6 +44,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
   const [useScoreOnly, setUseScoreOnly] = useState(false);
+  const [searchOnlyAlbum, setSearchOnlyAlbum] = useState(true);
+  const [searchNoSecondaryType, setSearchNoSecondaryType] = useState(true);
   const [officialOnly, setOfficialOnly] = useState(true);
   const [typeFilter, setTypeFilter] = useState('Album');
   const [typeFilterReversed, setTypeFilterReversed] = useState(false);
@@ -65,7 +67,9 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
         track.id,
         includeAlbum,
         includeAlbum ? albumFilterValue : '',
-        useScoreOnly
+        useScoreOnly,
+        searchOnlyAlbum,
+        searchNoSecondaryType
       );
       setCandidates(results);
       setHasSearched(true);
@@ -102,6 +106,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setSecondaryTypeFilter('NULL');
       setSecondaryTypeFilterReversed(false);
       setSecondaryTypeFilterExact(false);
+      setSearchOnlyAlbum(true);
+      setSearchNoSecondaryType(true);
       setExpandedMbids(new Set());
     }
   }
@@ -218,6 +224,24 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                   className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
                 />
                 <span className="font-medium">Sort by MusicBrainz score only</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={searchOnlyAlbum}
+                  onChange={event => setSearchOnlyAlbum(event.target.checked)}
+                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+                />
+                <span className="font-medium">Only Album releases</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={searchNoSecondaryType}
+                  onChange={event => setSearchNoSecondaryType(event.target.checked)}
+                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+                />
+                <span className="font-medium">No secondary release types</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input

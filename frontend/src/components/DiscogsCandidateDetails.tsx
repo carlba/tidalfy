@@ -17,9 +17,15 @@ export function DiscogsCandidateDetails({ candidate }: DiscogsCandidateDetailsPr
           {candidate.releaseCountry ? ` · ${candidate.releaseCountry}` : ''}
         </DetailText>
       )}
+      {candidate.isMaster && <DetailText>Master release</DetailText>}
       {candidate.releaseLabel && <DetailText>{candidate.releaseLabel}</DetailText>}
       {candidate.releaseFormat && <DetailText>{candidate.releaseFormat}</DetailText>}
-      {candidate.releaseBarcode && <DetailText>EAN: {candidate.releaseBarcode}</DetailText>}
+      {candidate.releaseEans.length > 0 && (
+        <DetailText>EANs: {candidate.releaseEans.join(', ')}</DetailText>
+      )}
+      {candidate.releaseBarcodeRaw.length > 0 && (
+        <DetailText>Raw EAN(s): {candidate.releaseBarcodeRaw.join(', ')}</DetailText>
+      )}
       {candidate.isrc && <DetailText>ISRC: {candidate.isrc}</DetailText>}
     </>
   );

@@ -75,6 +75,8 @@ model DiscogsMatch {
   releaseLabel     String?  @map("release_label")
   releaseFormat    String?  @map("release_format")
   releaseBarcode   String?  @map("release_barcode")
+  releaseBarcodeRaw String[] @default([]) @map("release_barcode_raw")
+  releaseEans      String[] @default([]) @map("release_eans")
   releaseCoverArtUrl String? @map("release_cover_art_url")
   resourceUrl      String?  @map("resource_url")
   selectedAt       DateTime @default(now()) @map("selected_at")

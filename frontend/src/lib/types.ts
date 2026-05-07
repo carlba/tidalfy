@@ -29,6 +29,8 @@ export interface DiscogsMatch {
   releaseLabel: string | null;
   releaseFormat: string | null;
   releaseBarcode: string | null;
+  releaseBarcodeRaw: string[];
+  releaseEans: string[];
   releaseCoverArtUrl: string | null;
   resourceUrl: string | null;
   isrc?: string | null;
@@ -45,9 +47,12 @@ export interface DiscogsCandidate {
   releaseLabel: string | null;
   releaseFormat: string | null;
   releaseBarcode: string | null;
+  releaseBarcodeRaw: string[];
+  releaseEans: string[];
   releaseCoverArtUrl: string | null;
   resourceUrl: string | null;
   isrc?: string | null;
+  isMaster: boolean;
 }
 
 export interface Track {
