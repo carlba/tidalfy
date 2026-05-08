@@ -13,7 +13,7 @@ interface TrackListItemProps {
 
 function discogsResourceUrlToWebUrl(resourceUrl: string | null): string | null {
   if (!resourceUrl) return null;
-  return resourceUrl.replace('https://api.discogs.com/', 'https://www.discogs.com/');
+  return resourceUrl.replace('https://api.discogs.com/masters', 'https://www.discogs.com/master');
 }
 
 function truncateText(value: string, maxLength = 40): string {

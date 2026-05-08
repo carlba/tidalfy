@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, Loader2, Check } from 'lucide-react';
+import { Search, Loader2, Check, ExternalLink } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,14 @@ interface DiscogsDialogProps {
   track: Track | null;
   onClose: () => void;
   onMatchSaved: (trackId: string, candidate: DiscogsMatch) => void;
+}
+
+function buildDiscogsWebUrl(resourceUrl: string | null, discogsReleaseId: string): string {
+  if (resourceUrl) {
+    return resourceUrl.replace('https://api.discogs.com/masters', 'https://www.discogs.com/master');
+  }
+
+  return `https://www.discogs.com/search/?q=${encodeURIComponent(discogsReleaseId)}`;
 }
 
 export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogProps) {
@@ -126,12 +134,23 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
 
         <div className="flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
           {track?.discogsMatch && (
-            <div className="flex items-center gap-2 p-3 bg-slate-100 border border-slate-200 rounded-lg text-sm">
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-100 border border-slate-200 rounded-lg text-sm">
               <Check className="h-4 w-4 text-slate-700 shrink-0" />
               <span className="text-slate-700">
                 Currently matched via Discogs:{' '}
                 <strong>{track.discogsMatch.releaseTitle ?? track.discogsMatch.title}</strong>
               </span>
+              <a
+                href={buildDiscogsWebUrl(
+                  track.discogsMatch.resourceUrl,
+                  track.discogsMatch.discogsReleaseId
+                )}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground hover:bg-muted/80">
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>View on Discogs</span>
+              </a>
             </div>
           )}
 
