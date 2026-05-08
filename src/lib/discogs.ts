@@ -286,7 +286,7 @@ export async function searchDiscogs(
     type: 'release',
   });
 
-  // albumReleaseParams.append('format', 'Compilation');
+  albumReleaseParams.append('format', 'Compilation');
   albumReleaseParams.append('format', 'Album');
 
   if (freeText) {

@@ -36,7 +36,8 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
   const [savingReleaseId, setSavingReleaseId] = useState<string | null>(null);
   const [searchTitle, setSearchTitle] = useState<string>(track?.trackName ?? '');
   const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames[0] ?? '');
-  const [albumFilter, setAlbumFilter] = useState<string>('');
+  const [albumEnabled, setAlbumEnabled] = useState<boolean>(Boolean(track?.albumName));
+  const [albumFilter, setAlbumFilter] = useState<string>(track?.albumName ?? '');
   const [extended, setExtended] = useState(false);
   const [freeText, setFreeText] = useState(false);
   const [sortByDate, setSortByDate] = useState(false);
@@ -49,7 +50,7 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
     setHasSearched(false);
 
     try {
-      const searchAlbumName = albumFilter.trim() || undefined;
+      const searchAlbumName = albumEnabled ? albumFilter.trim() || undefined : undefined;
       const searchTitleValue = searchTitle.trim() || undefined;
       const searchArtistValue = searchArtist.trim() || undefined;
       const results = await searchDiscogs(
@@ -90,7 +91,8 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
       setSearchError(null);
       setSearchTitle(track?.trackName ?? '');
       setSearchArtist(track?.artistNames[0] ?? '');
-      setAlbumFilter('');
+      setAlbumEnabled(Boolean(track?.albumName));
+      setAlbumFilter(track?.albumName ?? '');
       setExtended(false);
       setFreeText(false);
       setSortByDate(false);
@@ -159,8 +161,8 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
           <fieldset className="rounded-lg border border-border bg-muted/5 p-4">
             <legend className="text-sm font-semibold text-foreground">Search options</legend>
             <p className="text-sm text-muted-foreground mb-3">
-              Edit the title used for search. Spotify album name is optional and only used if
-              provided.
+              Edit the title used for search. Album filter is prefilled from Spotify and applied
+              only when enabled.
             </p>
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium">Search title</span>
@@ -181,7 +183,15 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
               />
             </label>
             <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium">Spotify album</span>
+              <span className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={albumEnabled}
+                  onChange={event => setAlbumEnabled(event.target.checked)}
+                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+                />
+                <span className="font-medium">Album</span>
+              </span>
               <Input
                 type="text"
                 value={albumFilter}
@@ -191,6 +201,7 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
                     ? `Optional: ${track.albumName}`
                     : 'Type album name to filter results'
                 }
+                disabled={!albumEnabled}
               />
             </label>
             <label className="flex items-center gap-2 text-sm">
