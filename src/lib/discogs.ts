@@ -240,7 +240,7 @@ async function runDiscogsSearch(
   );
 
   const candidates = results
-    .slice(0, 20)
+    .slice(0, 50)
     .map(result => buildCandidate(result, title, artistCredit));
 
   return candidates;
@@ -250,12 +250,14 @@ export async function searchDiscogs(
   trackName: string,
   artistName: string,
   albumName?: string,
-  extended = false
+  extended = false,
+  freeText = false
 ): Promise<DiscogsCandidate[]> {
   const token = getDiscogsToken();
-  const title = trackName || artistName || 'Discogs Search';
-  const artistCredit = artistName || 'Unknown Artist';
+  const title = trackName;
+  const artistCredit = artistName;
   const normalizedTrackName = trackName.replace(/['’]/g, '');
+  const freeTextQuery = [trackName, artistName, albumName].filter(Boolean).join(' ').trim();
 
   const albumMasterParams = new URLSearchParams({
     per_page: '50',
@@ -263,32 +265,50 @@ export async function searchDiscogs(
     format: 'Album',
     format_exact: 'Album',
   });
-  if (artistName) {
-    albumMasterParams.set('artist', artistName);
-  }
-  if (normalizedTrackName) {
-    albumMasterParams.set('track', normalizedTrackName);
-  }
-  if (albumName) {
-    albumMasterParams.set('release_title', albumName);
+  if (freeText) {
+    if (freeTextQuery) {
+      albumMasterParams.set('q', freeTextQuery);
+    }
+  } else {
+    if (artistName) {
+      albumMasterParams.set('artist', artistName);
+    }
+    if (normalizedTrackName) {
+      albumMasterParams.set('track', normalizedTrackName);
+    }
+    if (albumName) {
+      albumMasterParams.set('release_title', albumName);
+    }
   }
 
   const albumReleaseParams = new URLSearchParams({
     per_page: '50',
     type: 'release',
-    format: 'Album',
   });
-  if (artistName) {
-    albumReleaseParams.set('artist', artistName);
-  }
-  if (normalizedTrackName) {
-    albumReleaseParams.set('track', normalizedTrackName);
-  }
-  if (albumName) {
-    albumReleaseParams.set('release_title', albumName);
+
+  albumReleaseParams.append('format', 'Compilation');
+  // albumReleaseParams.append('format', 'Compilation');
+  albumReleaseParams.append('format', 'Album');
+
+  if (freeText) {
+    if (freeTextQuery) {
+      albumReleaseParams.set('q', freeTextQuery);
+    }
+  } else {
+    if (artistName) {
+      albumReleaseParams.set('artist', artistName);
+    }
+    if (normalizedTrackName) {
+      albumReleaseParams.set('track', normalizedTrackName);
+    }
+    if (albumName) {
+      albumReleaseParams.set('release_title', albumName);
+    }
   }
 
-  const singlesQueryText = [normalizedTrackName, artistName].filter(Boolean).join(' ').trim();
+  const singlesQueryText = freeText
+    ? freeTextQuery
+    : [normalizedTrackName, artistName].filter(Boolean).join(' ').trim();
   const singlesMasterParams = new URLSearchParams({
     q: singlesQueryText,
     per_page: '50',
@@ -314,10 +334,8 @@ export async function searchDiscogs(
       : Promise.resolve([]),
   ]);
 
-  LOGGER.debug({ allSearches });
+  LOGGER.debug({ freeText, title, artistCredit, normalizedTrackName }, 'freetest');
 
   const mergedCandidates = mergeOrderedCandidates(allSearches);
   return mergedCandidates;
-
-  return [];
 }

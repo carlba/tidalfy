@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search, Loader2, Check } from 'lucide-react';
 import {
   Dialog,
@@ -28,7 +28,8 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
   const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames[0] ?? '');
   const [albumFilter, setAlbumFilter] = useState<string>('');
   const [extended, setExtended] = useState(false);
-  const [sortByDate, setSortByDate] = useState(true);
+  const [freeText, setFreeText] = useState(false);
+  const [sortByDate, setSortByDate] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   async function handleSearch() {
@@ -46,7 +47,8 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
         searchTitleValue,
         searchArtistValue,
         searchAlbumName,
-        extended
+        extended,
+        freeText
       );
       setCandidates(results);
       setHasSearched(true);
@@ -71,13 +73,6 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
     }
   }
 
-  useEffect(() => {
-    setSearchTitle(track?.trackName ?? '');
-    setSearchArtist(track?.artistNames[0] ?? '');
-    setExtended(false);
-    setSortByDate(true);
-  }, [track]);
-
   function handleOpenChange(open: boolean) {
     if (!open) {
       onClose();
@@ -87,7 +82,8 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
       setSearchArtist(track?.artistNames[0] ?? '');
       setAlbumFilter('');
       setExtended(false);
-      setSortByDate(true);
+      setFreeText(false);
+      setSortByDate(false);
       setHasSearched(false);
     }
   }
@@ -184,6 +180,15 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
                 className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
               />
               <span className="font-medium">Include non-master albums and singles</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={freeText}
+                onChange={event => setFreeText(event.target.checked)}
+                className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+              />
+              <span className="font-medium">Use free-text Discogs search</span>
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input

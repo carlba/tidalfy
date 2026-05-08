@@ -106,7 +106,8 @@ export async function searchDiscogs(
   searchTitle = '',
   searchArtist = '',
   albumName = '',
-  extended = false
+  extended = false,
+  freeText = false
 ): Promise<DiscogsCandidate[]> {
   const query = new URLSearchParams();
   if (searchTitle.trim()) {
@@ -121,6 +122,9 @@ export async function searchDiscogs(
   if (extended) {
     query.set('extended', 'true');
   }
+  if (freeText) {
+    query.set('freeText', 'true');
+  }
   const url = query.toString()
     ? `/api/tracks/${trackId}/discogs?${query}`
     : `/api/tracks/${trackId}/discogs`;
@@ -132,7 +136,7 @@ export async function saveDiscogsMatch(
   trackId: string,
   candidate: DiscogsCandidate
 ): Promise<DiscogsMatch> {
-  const { isMaster, ...payload } = candidate;
+  const payload = candidate;
   const response = await fetch(`/api/tracks/${trackId}/discogs-match`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
