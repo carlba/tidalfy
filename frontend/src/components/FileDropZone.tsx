@@ -12,7 +12,7 @@ interface FileDropZoneProps {
   error?: string | null;
   loading?: boolean;
   disabled?: boolean;
-  onFile: (file: File) => void;
+  onFile: (file: File) => void | Promise<void>;
 }
 
 export function FileDropZone({
@@ -30,7 +30,7 @@ export function FileDropZone({
   const [isDragging, setIsDragging] = useState(false);
 
   function handleFile(file: File) {
-    onFile(file);
+    void onFile(file);
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {

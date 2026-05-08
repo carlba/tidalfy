@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { type BadgeProps, Badge } from '@/components/ui/badge';
 

@@ -21,7 +21,9 @@ interface DiscogsDialogProps {
 
 function buildDiscogsWebUrl(resourceUrl: string | null, discogsReleaseId: string): string {
   if (resourceUrl) {
-    return resourceUrl.replace('https://api.discogs.com/masters', 'https://www.discogs.com/master');
+    return resourceUrl
+      .replace('https://api.discogs.com/masters', 'https://www.discogs.com/master')
+      .replace('https://api.discogs.com/releases', 'https://www.discogs.com/release');
   }
 
   return `https://www.discogs.com/search/?q=${encodeURIComponent(discogsReleaseId)}`;
@@ -220,7 +222,7 @@ export function DiscogsDialog({ track, onClose, onMatchSaved }: DiscogsDialogPro
             </label>
             <Button
               className="mt-4"
-              onClick={handleSearch}
+              onClick={() => void handleSearch()}
               disabled={isSearching}
               variant="outline">
               {isSearching ? (

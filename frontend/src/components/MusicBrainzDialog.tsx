@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Music, Loader2, Check } from 'lucide-react';
 import {
   Dialog,
@@ -56,11 +56,6 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [secondaryTypeFilterReversed, setSecondaryTypeFilterReversed] = useState(false);
   const [secondaryTypeFilterExact, setSecondaryTypeFilterExact] = useState(false);
   const [expandedMbids, setExpandedMbids] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    setSearchTitle(track?.trackName ?? '');
-    setSearchArtist(track?.artistNames[0] ?? '');
-  }, [track]);
 
   const albumFilterValue = albumFilter ?? track?.albumName ?? '';
 
@@ -180,7 +175,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   }
 
   return (
-    <Dialog open={track !== null} onOpenChange={handleOpenChange}>
+    <Dialog key={track?.id ?? 'none'} open={track !== null} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Find MusicBrainz Match</DialogTitle>
@@ -355,7 +350,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
             </div>
             <Button
               className="mt-1"
-              onClick={handleSearch}
+              onClick={() => void handleSearch()}
               disabled={isSearching}
               variant="outline">
               {isSearching ? (

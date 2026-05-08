@@ -8,7 +8,7 @@ interface MusicBrainzCandidateGroupProps {
   isExpanded: boolean;
   onToggle: () => void;
   savingMbid: string | null;
-  onSelect: (candidate: MusicBrainzCandidate) => void;
+  onSelect: (candidate: MusicBrainzCandidate) => void | Promise<void>;
 }
 
 function getMostCommonReleaseTitle(candidates: MusicBrainzCandidate[]): string | null {

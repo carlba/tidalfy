@@ -55,6 +55,9 @@ export interface DiscogsCandidate {
   resourceUrl: string | null;
   isrc?: string | null;
   isMaster: boolean;
+  isAlbum?: boolean;
+  isSingle?: boolean;
+  isCompilation?: boolean;
 }
 
 export interface Track {

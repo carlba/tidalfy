@@ -7,7 +7,7 @@ interface TrackListProps {
   tracks: Track[];
   onSearchMatch: (track: Track) => void;
   onSearchDiscogs: (track: Track) => void;
-  onArchive: (track: Track) => void;
+  onArchive: (track: Track) => void | Promise<void>;
   emptyMessage?: string;
 }
 

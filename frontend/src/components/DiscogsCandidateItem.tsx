@@ -6,12 +6,14 @@ import type { DiscogsCandidate } from '@/lib/types';
 interface DiscogsCandidateItemProps {
   candidate: DiscogsCandidate;
   savingReleaseId: string | null;
-  onSelect: (candidate: DiscogsCandidate) => void;
+  onSelect: (candidate: DiscogsCandidate) => void | Promise<void>;
 }
 
 function discogsResourceUrlToWebUrl(resourceUrl: string | null): string | null {
   if (!resourceUrl) return null;
-  return resourceUrl.replace('https://api.discogs.com/masters', 'https://www.discogs.com/master');
+  return resourceUrl
+    .replace('https://api.discogs.com/masters', 'https://www.discogs.com/master')
+    .replace('https://api.discogs.com/releases', 'https://www.discogs.com/release');
 }
 
 export function DiscogsCandidateItem({
@@ -53,7 +55,7 @@ export function DiscogsCandidateItem({
         </div>
       </div>
 
-      <Button size="sm" onClick={() => onSelect(candidate)} disabled={savingReleaseId !== null}>
+      <Button size="sm" onClick={() => void onSelect(candidate)} disabled={savingReleaseId !== null}>
         {savingReleaseId === candidate.discogsReleaseId ? (
           <Loader2 className="h-3 w-3 animate-spin" />
         ) : (

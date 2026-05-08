@@ -1,19 +1,20 @@
 import { Check, Archive, Disc, Music2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatDuration } from '@/lib/utils';
 import type { Track } from '@/lib/types';
 
 interface TrackListItemProps {
   track: Track;
   onSearchMatch: (track: Track) => void;
   onSearchDiscogs: (track: Track) => void;
-  onArchive: (track: Track) => void;
+  onArchive: (track: Track) => void | Promise<void>;
 }
 
 function discogsResourceUrlToWebUrl(resourceUrl: string | null): string | null {
   if (!resourceUrl) return null;
-  return resourceUrl.replace('https://api.discogs.com/masters', 'https://www.discogs.com/master');
+  return resourceUrl
+    .replace('https://api.discogs.com/masters', 'https://www.discogs.com/master')
+    .replace('https://api.discogs.com/releases', 'https://www.discogs.com/release');
 }
 
 function truncateText(value: string, maxLength = 40): string {
@@ -36,6 +37,10 @@ export function TrackListItem({
 
   const albumName = track.albumName ? truncateText(track.albumName, 40) : '';
   const isMatched = Boolean(track.match || track.discogsMatch);
+
+  const discogsWebUrl = track.discogsMatch
+    ? discogsResourceUrlToWebUrl(track.discogsMatch.resourceUrl)
+    : null;
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
@@ -108,9 +113,9 @@ export function TrackListItem({
                   Discogs: {track.discogsMatch.releaseTitle ?? track.discogsMatch.title}
                 </span>
               </div>
-              {discogsResourceUrlToWebUrl(track.discogsMatch.resourceUrl) ? (
+              {discogsWebUrl ? (
                 <a
-                  href={discogsResourceUrlToWebUrl(track.discogsMatch.resourceUrl)}
+                  href={discogsWebUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground hover:bg-muted/80">
@@ -138,7 +143,7 @@ export function TrackListItem({
             size="sm"
             variant="ghost"
             className="text-amber-600"
-            onClick={() => onArchive(track)}>
+            onClick={() => void onArchive(track)}>
             <Archive className="h-3.5 w-3.5 mr-1" />
             {track.archived ? 'Unarchive' : 'Archive'}
           </Button>

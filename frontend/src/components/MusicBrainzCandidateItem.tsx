@@ -6,7 +6,7 @@ import type { MusicBrainzCandidate } from '@/lib/types';
 interface MusicBrainzCandidateItemProps {
   candidate: MusicBrainzCandidate;
   savingMbid: string | null;
-  onSelect: (candidate: MusicBrainzCandidate) => void;
+  onSelect: (candidate: MusicBrainzCandidate) => void | Promise<void>;
 }
 
 export function MusicBrainzCandidateItem({
@@ -33,7 +33,7 @@ export function MusicBrainzCandidateItem({
         </div>
       </div>
 
-      <Button size="sm" onClick={() => onSelect(candidate)} disabled={savingMbid !== null}>
+      <Button size="sm" onClick={() => void onSelect(candidate)} disabled={savingMbid !== null}>
         {savingMbid === candidate.mbid ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Select'}
       </Button>
     </div>

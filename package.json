@@ -15,7 +15,7 @@
     "url": "git@github.com:carlba/typescript-template"
   },
   "scripts": {
-    "build": "tsc && npm run build:frontend",
+    "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "tsc",
     "build:frontend": "cd frontend && npm run build",
     "build-watch": "tsc --watch",
@@ -25,7 +25,9 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint .",
+    "lint:backend": "eslint .",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint": "npm run lint:backend && npm run lint:frontend",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dependency:update": "npx ncu -u",

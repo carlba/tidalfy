@@ -37,7 +37,7 @@ export function App() {
   const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
-    fetchBatches().then(setBatches).catch(console.error);
+    void fetchBatches().then(setBatches).catch(console.error);
   }, []);
 
   async function loadTracks(batchId?: string, status: TrackStatus = trackStatus) {
@@ -55,18 +55,18 @@ export function App() {
   function handleBatchSelect(batchId: string) {
     setSelectedBatchId(batchId);
     setShowImport(false);
-    loadTracks(batchId);
+    void loadTracks(batchId);
   }
 
   function handleStatusChange(status: TrackStatus) {
     setTrackStatus(status);
-    loadTracks(selectedBatchId ?? undefined, status);
+    void loadTracks(selectedBatchId ?? undefined, status);
   }
 
   function handleImportSuccess(result: ImportResult) {
     setImportErrors(result.errors);
     setShowImport(false);
-    fetchBatches()
+    void fetchBatches()
       .then(updated => {
         setBatches(updated);
         handleBatchSelect(result.batchId);
