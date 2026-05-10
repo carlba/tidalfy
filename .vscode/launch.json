@@ -17,8 +17,17 @@
         "**/node_modules/**",
         "debug:*",
         "**/debug:*",
+        "debug:<eval>*",
+        "**/debug:<eval>*",
+        "debug:<eval>/**",
+        "**/debug:<eval>/**",
+        "**/*<eval>*",
+        "**/*debug*",
+        "**/VM*",
         "**/vite://*",
         "**/webpack:///./*",
+        "<anonymous>/**",
+        "**/<anonymous>*",
         "<node_internals>/**"
       ]
     }

@@ -2,5 +2,21 @@
   "cSpell.words": [
     "mbid",
     "Mbids"
+  ],
+  "debug.javascript.skipFiles": [
+    "**/node_modules/**",
+    "debug:*",
+    "**/debug:*",
+    "debug:<eval>*",
+    "**/debug:<eval>*",
+    "debug:<eval>/**",
+    "**/debug:<eval>/**",
+    "**/*<eval>*",
+    "**/*debug*",
+    "**/VM*",
+    "**/vite://*",
+    "**/webpack:///./*",
+    "<anonymous>/**",
+    "**/<anonymous>*"
   ]
 }
