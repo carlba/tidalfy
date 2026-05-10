@@ -79,7 +79,7 @@ export function TrackListItem({
               <div className="flex items-center gap-1">
                 <Check className="h-3 w-3 text-success shrink-0" />
                 <span className="text-xs text-success truncate">
-                  {track.match.title} — {track.match.artistCredit}
+                  {track.match.title} — {track.match.artistCredit.join(', ')}
                   {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
                 </span>
               </div>

@@ -46,6 +46,7 @@ export async function fetchTracks(
 export async function searchMusicBrainz(
   trackId: string,
   searchTitle = '',
+  useTitleFilter = true,
   searchArtist = '',
   useArtistFilter = true,
   includeAlbum = false,
@@ -56,6 +57,7 @@ export async function searchMusicBrainz(
   fetchReleaseMetadata = true
 ): Promise<MusicBrainzCandidate[]> {
   const query = new URLSearchParams();
+  query.set('useTitleFilter', String(useTitleFilter));
   if (searchTitle.trim()) {
     query.set('searchTitle', searchTitle.trim());
   }
@@ -90,13 +92,18 @@ export async function saveMatch(
   trackId: string,
   candidate: MusicBrainzCandidate
 ): Promise<MusicBrainzMatch> {
+  const artistCredit = candidate.artistCredit
+    .split(/\s*(?:,|&|\/)\s*/)
+    .map(name => name.trim())
+    .filter(Boolean);
+
   const response = await fetch(`/api/tracks/${trackId}/match`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mbid: candidate.mbid,
       title: candidate.title,
-      artistCredit: candidate.artistCredit,
+      artistCredit,
       releaseId: candidate.releaseId,
       releaseBarcode: candidate.releaseBarcode,
       releaseAsin: candidate.releaseAsin,

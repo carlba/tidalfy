@@ -46,17 +46,12 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
   const [useArtistFilter, setUseArtistFilter] = useState(true);
+  const [useTitleFilter, setUseTitleFilter] = useState(true);
   const [useScoreOnly, setUseScoreOnly] = useState(false);
   const [searchOnlyAlbum, setSearchOnlyAlbum] = useState(true);
   const [searchNoSecondaryType, setSearchNoSecondaryType] = useState(true);
   const [fetchReleaseMetadata, setFetchReleaseMetadata] = useState(true);
-  const [officialOnly, setOfficialOnly] = useState(true);
-  const [typeFilter, setTypeFilter] = useState('Album');
-  const [typeFilterReversed, setTypeFilterReversed] = useState(false);
-  const [typeFilterExact, setTypeFilterExact] = useState(true);
-  const [secondaryTypeFilter, setSecondaryTypeFilter] = useState('NULL');
-  const [secondaryTypeFilterReversed, setSecondaryTypeFilterReversed] = useState(false);
-  const [secondaryTypeFilterExact, setSecondaryTypeFilterExact] = useState(false);
+  const [resultFilter, setResultFilter] = useState('');
   const [expandedMbids, setExpandedMbids] = useState<Set<string>>(new Set());
 
   const albumFilterValue = albumFilter ?? track?.albumName ?? '';
@@ -70,6 +65,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       const results = await searchMusicBrainz(
         track.id,
         searchTitle,
+        useTitleFilter,
         searchArtist,
         useArtistFilter,
         includeAlbum,
@@ -108,17 +104,12 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setCandidates([]);
       setHasSearched(false);
       setSearchError(null);
-      setTypeFilter('Album');
-      setTypeFilterReversed(false);
-      setTypeFilterExact(true);
-      setSecondaryTypeFilter('NULL');
-      setSecondaryTypeFilterReversed(false);
-      setSecondaryTypeFilterExact(false);
-      setSearchOnlyAlbum(true);
-      setSearchNoSecondaryType(true);
       setIncludeAlbum(false);
       setFetchReleaseMetadata(true);
+      setSearchOnlyAlbum(true);
+      setSearchNoSecondaryType(true);
       setUseArtistFilter(true);
+      setResultFilter('');
       setExpandedMbids(new Set());
       setSearchTitle(track?.trackName ?? '');
       setSearchArtist(track?.artistNames.join(', ') ?? '');
@@ -126,48 +117,31 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   }
 
   const filteredCandidates = useMemo(() => {
-    const normalizedTypeFilter = typeFilter.trim().toLowerCase();
-    const normalizedSecondaryTypeFilter = secondaryTypeFilter.trim().toLowerCase();
-    const isNullTypeFilter = normalizedTypeFilter === 'null';
-    const isNullSecondaryFilter = normalizedSecondaryTypeFilter === 'null';
+    const text = resultFilter.trim().toLowerCase();
+    if (!text) {
+      return candidates;
+    }
 
     return candidates.filter(candidate => {
-      const releaseType = candidate.releaseType?.toLowerCase() ?? '';
-      const secondaryTypes = candidate.releaseSecondaryTypes?.map(type => type.toLowerCase()) ?? [];
+      const fields = [
+        candidate.title,
+        candidate.artistCredit,
+        candidate.releaseTitle ?? '',
+        candidate.releaseCountry ?? '',
+        candidate.releaseStatus ?? '',
+        candidate.releaseType ?? '',
+        candidate.releasePackaging ?? '',
+        candidate.disambiguation ?? '',
+        candidate.isrc ?? '',
+        candidate.releaseBarcode ?? '',
+        candidate.releaseSecondaryTypes?.join(' ') ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
 
-      const typeMatches = normalizedTypeFilter
-        ? isNullTypeFilter
-          ? releaseType === ''
-          : typeFilterExact
-            ? releaseType === normalizedTypeFilter
-            : releaseType.includes(normalizedTypeFilter)
-        : true;
-      const secondaryMatches = normalizedSecondaryTypeFilter
-        ? isNullSecondaryFilter
-          ? secondaryTypes.length === 0
-          : secondaryTypeFilterExact
-            ? secondaryTypes.some(type => type === normalizedSecondaryTypeFilter)
-            : secondaryTypes.some(type => type.includes(normalizedSecondaryTypeFilter))
-        : true;
-
-      const typePass = typeFilterReversed ? !typeMatches : typeMatches;
-      const secondaryPass = secondaryTypeFilterReversed ? !secondaryMatches : secondaryMatches;
-      const officialPass = officialOnly
-        ? candidate.releaseStatus?.toLowerCase() === 'official'
-        : true;
-
-      return typePass && secondaryPass && officialPass;
+      return fields.includes(text);
     });
-  }, [
-    candidates,
-    typeFilter,
-    typeFilterReversed,
-    typeFilterExact,
-    secondaryTypeFilter,
-    secondaryTypeFilterReversed,
-    secondaryTypeFilterExact,
-    officialOnly,
-  ]);
+  }, [candidates, resultFilter]);
 
   function toggleGroup(mbid: string) {
     setExpandedMbids(current => {
@@ -199,7 +173,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
             <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/20 rounded-lg text-sm">
               <Check className="h-4 w-4 text-success shrink-0" />
               <span className="text-success">
-                Currently matched: <strong>{track.match.title}</strong> — {track.match.artistCredit}
+                Currently matched: <strong>{track.match.title}</strong> —{' '}
+                {track.match.artistCredit.join(', ')}
               </span>
             </div>
           )}
@@ -210,15 +185,25 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
               Edit the title used for search. Spotify album name is prefilled from the selected
               track and can be optionally applied.
             </p>
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium">Search title</span>
-              <Input
-                type="text"
-                value={searchTitle}
-                onChange={event => setSearchTitle(event.target.value)}
-                placeholder={track?.trackName ?? 'Type title to search'}
-              />
-            </label>
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={useTitleFilter}
+                  onChange={event => setUseTitleFilter(event.target.checked)}
+                  className="h-4 w-4 rounded border-muted-foreground accent-primary focus:ring-primary"
+                  aria-label="Enable title search"
+                />
+                <span className="font-medium">Title</span>
+                <Input
+                  type="text"
+                  value={searchTitle}
+                  onChange={event => setSearchTitle(event.target.value)}
+                  placeholder={track?.trackName ?? 'Type title to search'}
+                  disabled={!useTitleFilter}
+                />
+              </div>
+            </div>
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <input
@@ -228,6 +213,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                   className="h-4 w-4 rounded border-muted-foreground accent-primary focus:ring-primary"
                   aria-label="Enable artist search"
                 />
+                <span className="font-medium">Artist</span>
                 <Input
                   type="text"
                   value={searchArtist}
@@ -247,6 +233,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                   className="h-4 w-4 rounded border-muted-foreground accent-primary focus:ring-primary"
                   aria-label="Enable album search"
                 />
+                <span className="font-medium">Album</span>
                 <Input
                   type="text"
                   value={albumFilterValue}
@@ -267,8 +254,6 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 />
                 <span className="font-medium">Sort by MusicBrainz score only</span>
               </label>
-            </div>
-            <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -278,6 +263,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 />
                 <span className="font-medium">Only Album releases</span>
               </label>
+            </div>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -287,8 +274,6 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 />
                 <span className="font-medium">No secondary release types</span>
               </label>
-            </div>
-            <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -302,86 +287,6 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                     Load extra release metadata from MusicBrainz when available.
                   </p>
                 </div>
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={officialOnly}
-                  onChange={event => setOfficialOnly(event.target.checked)}
-                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
-                />
-                <span className="font-medium">Official release only</span>
-              </label>
-            </div>
-            <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
-              {useScoreOnly ? 'Score-only sorting' : 'Custom ranking'}
-            </span>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm">
-                <span className="flex items-center justify-between gap-2 font-medium">
-                  <span>Release type</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTypeFilterExact(current => !current)}
-                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
-                        typeFilterExact
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-muted/10 text-foreground'
-                      }`}>
-                      Exact
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTypeFilterReversed(current => !current)}
-                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
-                        typeFilterReversed
-                          ? 'border-destructive bg-destructive/10 text-destructive'
-                          : 'border-border bg-muted/10 text-foreground'
-                      }`}>
-                      {typeFilterReversed ? 'Exclude' : 'Include'}
-                    </button>
-                  </div>
-                </span>
-                <Input
-                  type="text"
-                  value={typeFilter}
-                  onChange={event => setTypeFilter(event.target.value)}
-                  placeholder="Filter release type (or NULL)"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm">
-                <span className="flex items-center justify-between gap-2 font-medium">
-                  <span>Secondary type</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSecondaryTypeFilterExact(current => !current)}
-                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
-                        secondaryTypeFilterExact
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-muted/10 text-foreground'
-                      }`}>
-                      Exact
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSecondaryTypeFilterReversed(current => !current)}
-                      className={`rounded-full border px-2 py-1 text-xs font-semibold transition ${
-                        secondaryTypeFilterReversed
-                          ? 'border-destructive bg-destructive/10 text-destructive'
-                          : 'border-border bg-muted/10 text-foreground'
-                      }`}>
-                      {secondaryTypeFilterReversed ? 'Exclude' : 'Include'}
-                    </button>
-                  </div>
-                </span>
-                <Input
-                  type="text"
-                  value={secondaryTypeFilter}
-                  onChange={event => setSecondaryTypeFilter(event.target.value)}
-                  placeholder="Filter secondary type (or NULL)"
-                />
               </label>
             </div>
             <Button
@@ -401,17 +306,28 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 </>
               )}
             </Button>
+            <label className="flex flex-col gap-2 text-sm mt-4">
+              <span className="font-medium">Filter matches</span>
+              <Input
+                type="text"
+                value={resultFilter}
+                onChange={event => setResultFilter(event.target.value)}
+                placeholder="Search all match text"
+              />
+            </label>
           </fieldset>
 
           {searchError && <p className="text-sm text-destructive">{searchError}</p>}
 
-          {hasSearched && candidates.length === 0 && (
+          {hasSearched && filteredCandidates.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              No matches found. Try a different track or check the spelling.
+              {candidates.length === 0
+                ? 'No matches found. Try a different track or check the spelling.'
+                : 'No matches found for the current filter.'}
             </p>
           )}
 
-          {candidates.length > 0 && (
+          {filteredCandidates.length > 0 && (
             <div className="flex flex-col overflow-hidden rounded-lg border">
               <div className="overflow-y-auto max-h-[45vh] min-h-0">
                 <ul className="divide-y divide-border">

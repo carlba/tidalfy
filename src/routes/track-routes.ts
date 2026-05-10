@@ -25,7 +25,7 @@ const trackSchema = z.object({
     .object({
       mbid: z.string(),
       title: z.string(),
-      artistCredit: z.string(),
+      artistCredit: z.array(z.string()),
       releaseId: z.string().nullable(),
       releaseBarcode: z.string().nullable(),
       releaseAsin: z.string().nullable(),
@@ -115,10 +115,15 @@ const discogsMatchSchema = z.object({
   selectedAt: z.date(),
 });
 
-function parseArtistNames(artistCredit: string): string[] {
-  return artistCredit
-    .split(/\s*(?:,|&|\/)\s*/)
-    .map(name => name.trim())
+function parseArtistNames(artistCredit: string | string[]): string[] {
+  const rawCredits = Array.isArray(artistCredit) ? artistCredit : [artistCredit];
+  return rawCredits
+    .flatMap(credit =>
+      credit
+        .split(/\s*(?:,|&|\/)\s*/)
+        .map(name => name.trim())
+        .filter(Boolean)
+    )
     .filter(Boolean);
 }
 
@@ -158,6 +163,7 @@ export async function trackRoutes(app: FastifyInstance) {
         params: z.object({ id: z.string() }),
         querystring: z.object({
           searchTitle: z.string().optional(),
+          useTitleFilter: z.string().optional(),
           searchArtist: z.string().optional(),
           useArtistFilter: z.string().optional(),
           includeAlbum: z.string().optional(),
@@ -180,6 +186,7 @@ export async function trackRoutes(app: FastifyInstance) {
       }
 
       const searchTitle = request.query.searchTitle?.trim();
+      const useTitleFilter = request.query.useTitleFilter !== 'false';
       const searchArtist = request.query.searchArtist?.trim();
       const useArtistFilter = request.query.useArtistFilter !== 'false';
       const includeAlbum = request.query.includeAlbum === 'true';
@@ -187,8 +194,9 @@ export async function trackRoutes(app: FastifyInstance) {
       const useScoreOnly = request.query.useScoreOnly === 'true';
       const onlyAlbum = request.query.onlyAlbum !== 'false';
       const noSecondaryType = request.query.noSecondaryType !== 'false';
+      const trackName = useTitleFilter ? searchTitle || track.trackName : '';
       const candidates = await searchMusicBrainz(
-        searchTitle ?? track.trackName,
+        trackName,
         useArtistFilter ? (searchArtist ?? track.artistNames[0] ?? '') : '',
         includeAlbum ? albumName : undefined,
         track.releaseDate,
@@ -290,7 +298,7 @@ export async function trackRoutes(app: FastifyInstance) {
         body: z.object({
           mbid: z.string(),
           title: z.string(),
-          artistCredit: z.string(),
+          artistCredit: z.array(z.string()),
           releaseId: z.string().nullable(),
           releaseBarcode: z.string().nullable(),
           releaseAsin: z.string().nullable(),
@@ -307,7 +315,7 @@ export async function trackRoutes(app: FastifyInstance) {
             trackId: z.string(),
             mbid: z.string(),
             title: z.string(),
-            artistCredit: z.string(),
+            artistCredit: z.array(z.string()),
             releaseId: z.string().nullable(),
             releaseBarcode: z.string().nullable(),
             releaseAsin: z.string().nullable(),

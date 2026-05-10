@@ -49,7 +49,7 @@ model MusicBrainzMatch {
   track        Track    @relation(fields: [trackId], references: [id], onDelete: Cascade, name: "TrackMatch")
   mbid           String   @map("mbid")
   title          String   @map("title")
-  artistCredit   String   @map("artist_credit")
+  artistCredit   String[] @map("artist_credit")
   releaseId      String?  @map("release_id")
   releaseBarcode String?  @map("release_barcode")
   releaseAsin    String?  @map("release_asin")

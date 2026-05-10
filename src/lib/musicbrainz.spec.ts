@@ -57,9 +57,7 @@ describe('searchMusicBrainz', () => {
       undefined,
       false,
       false,
-      true,
-      true,
-      false
+      true
     );
 
     expect(mockGet).toHaveBeenCalled();
@@ -109,9 +107,7 @@ describe('searchMusicBrainz', () => {
       undefined,
       false,
       false,
-      true,
-      true,
-      false
+      true
     );
 
     expect(mockGet).toHaveBeenCalled();
@@ -125,6 +121,92 @@ describe('searchMusicBrainz', () => {
       expect.objectContaining({
         mbid: 'abc123',
         title: 'Pop opp i topp (feat. Lill-Babs)',
+      }),
+    ]);
+  });
+
+  it('builds an artist-only query when title search is disabled', async () => {
+    const mockJson = vi.fn().mockResolvedValue({
+      recordings: [
+        {
+          id: 'artist-only-1',
+          title: 'Another Song',
+          score: 100,
+          'artist-credit': [{ artist: { id: '3', name: 'Nightwish' }, name: 'Nightwish' }],
+          releases: [
+            {
+              id: 'release-3',
+              title: 'Some Release',
+              status: 'Official',
+              'release-group': { 'primary-type': 'Album' },
+            },
+          ],
+        },
+      ],
+    });
+
+    mockGet.mockReturnValue({ json: mockJson });
+
+    const results = await searchMusicBrainz(
+      '',
+      'Nightwish',
+      undefined,
+      undefined,
+      false,
+      false,
+      true
+    );
+
+    expect(mockGet).toHaveBeenCalled();
+    const [path, options] = mockGet.mock.calls[0] as [
+      string,
+      { searchParams: Record<string, string> },
+    ];
+    expect(path).toBe('recording');
+    expect(options.searchParams.query).toBe('artist:Nightwish');
+    expect(results).toEqual([
+      expect.objectContaining({
+        mbid: 'artist-only-1',
+        title: 'Another Song',
+      }),
+    ]);
+  });
+
+  it('builds a release-only query when only album filter is present', async () => {
+    const mockJson = vi.fn().mockResolvedValue({
+      recordings: [
+        {
+          id: 'album-only-1',
+          title: 'Some Track',
+          score: 100,
+          'artist-credit': [{ artist: { id: '4', name: 'Unknown Artist' }, name: 'Unknown Artist' }],
+          releases: [
+            {
+              id: 'release-4',
+              title: 'The Wrong Kind of War',
+              status: 'Official',
+              'release-group': { 'primary-type': 'Album' },
+            },
+          ],
+        },
+      ],
+    });
+
+    mockGet.mockReturnValue({ json: mockJson });
+
+    const results = await searchMusicBrainz('', '', 'The Wrong Kind of War', undefined, false, false, true);
+
+    expect(mockGet).toHaveBeenCalled();
+    const [path, options] = mockGet.mock.calls[0] as [
+      string,
+      { searchParams: Record<string, string> },
+    ];
+    expect(path).toBe('recording');
+    expect(options.searchParams.query).toBe('release:"The Wrong Kind of War"');
+    expect(results).toEqual([
+      expect.objectContaining({
+        mbid: 'album-only-1',
+        title: 'Some Track',
       }),
     ]);
   });

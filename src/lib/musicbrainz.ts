@@ -349,17 +349,23 @@ export async function searchMusicBrainz(
   try {
     const sanitizedArtistName = normalizeQueryText(artistName);
     const sanitizedAlbumName = albumName ? normalizeQueryText(albumName) : undefined;
-    const simplifiedTrackName = simplifyRecordingTitle(trackName);
-    const quotedRecordingQuery = `recording:"${normalizeQueryText(simplifiedTrackName)}"`;
+    const simplifiedTrackName = trackName ? simplifyRecordingTitle(trackName) : '';
+    const quotedRecordingQuery = simplifiedTrackName
+      ? `recording:"${normalizeQueryText(simplifiedTrackName)}"`
+      : null;
     const artistField = sanitizedArtistName
       ? `artist:${formatFieldValue(sanitizedArtistName)}`
       : null;
+    const albumField = sanitizedAlbumName ? `release:"${sanitizedAlbumName}"` : null;
 
-    const primaryQuery = artistField
-      ? `${quotedRecordingQuery} AND ${artistField}`
-      : quotedRecordingQuery;
-    const albumPrimaryQuery = sanitizedAlbumName
-      ? `${primaryQuery} AND release:"${sanitizedAlbumName}"`
+    const recordingArtistQuery = [quotedRecordingQuery, artistField].filter(Boolean).join(' AND ');
+    const primaryQuery = recordingArtistQuery || albumField;
+    if (!primaryQuery) {
+      return [];
+    }
+
+    const albumPrimaryQuery = recordingArtistQuery && albumField
+      ? `${recordingArtistQuery} AND ${albumField}`
       : primaryQuery;
 
     async function runSearch(query: string) {

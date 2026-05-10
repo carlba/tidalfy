@@ -75,11 +75,19 @@ export function App() {
   }
 
   function handleMatchSaved(trackId: string, candidate: MusicBrainzCandidate) {
+    const artistCredit = candidate.artistCredit
+      .split(/\s*(?:,|&|\/)\s*/)
+      .map(name => name.trim())
+      .filter(Boolean);
+
     setTracks(prev =>
-      prev.map(t =>
-        t.id === trackId
-          ? { ...t, match: { ...candidate, selectedAt: new Date().toISOString() } }
-          : t
+      prev.map(track =>
+        track.id === trackId
+          ? {
+              ...track,
+              match: { ...candidate, artistCredit, selectedAt: new Date().toISOString() },
+            }
+          : track
       )
     );
 
@@ -90,10 +98,10 @@ export function App() {
 
   function handleDiscogsSaved(trackId: string, candidate: DiscogsMatch) {
     setTracks(prev =>
-      prev.map(t =>
-        t.id === trackId
-          ? { ...t, discogsMatch: { ...candidate, selectedAt: new Date().toISOString() } }
-          : t
+      prev.map(track =>
+        track.id === trackId
+          ? { ...track, discogsMatch: { ...candidate, selectedAt: new Date().toISOString() } }
+          : track
       )
     );
   }

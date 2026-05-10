@@ -8,7 +8,7 @@ export interface ImportBatch {
 export interface MusicBrainzMatch {
   mbid: string;
   title: string;
-  artistCredit: string;
+  artistCredit: string[];
   releaseId: string | null;
   releaseBarcode: string | null;
   releaseAsin: string | null;
