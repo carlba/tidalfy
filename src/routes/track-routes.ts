@@ -115,6 +115,13 @@ const discogsMatchSchema = z.object({
   selectedAt: z.date(),
 });
 
+function parseArtistNames(artistCredit: string): string[] {
+  return artistCredit
+    .split(/\s*(?:,|&|\/)\s*/)
+    .map(name => name.trim())
+    .filter(Boolean);
+}
+
 export async function trackRoutes(app: FastifyInstance) {
   const server = app.withTypeProvider<ZodTypeProvider>();
 
@@ -152,11 +159,13 @@ export async function trackRoutes(app: FastifyInstance) {
         querystring: z.object({
           searchTitle: z.string().optional(),
           searchArtist: z.string().optional(),
+          useArtistFilter: z.string().optional(),
           includeAlbum: z.string().optional(),
           albumName: z.string().optional(),
           useScoreOnly: z.string().optional(),
           onlyAlbum: z.string().optional(),
           noSecondaryType: z.string().optional(),
+          fetchReleaseMetadata: z.string().optional(),
         }),
         response: {
           200: z.array(musicBrainzCandidateSchema),
@@ -172,6 +181,7 @@ export async function trackRoutes(app: FastifyInstance) {
 
       const searchTitle = request.query.searchTitle?.trim();
       const searchArtist = request.query.searchArtist?.trim();
+      const useArtistFilter = request.query.useArtistFilter !== 'false';
       const includeAlbum = request.query.includeAlbum === 'true';
       const albumName = request.query.albumName?.trim();
       const useScoreOnly = request.query.useScoreOnly === 'true';
@@ -179,13 +189,14 @@ export async function trackRoutes(app: FastifyInstance) {
       const noSecondaryType = request.query.noSecondaryType !== 'false';
       const candidates = await searchMusicBrainz(
         searchTitle ?? track.trackName,
-        searchArtist ?? track.artistNames[0] ?? '',
+        useArtistFilter ? (searchArtist ?? track.artistNames[0] ?? '') : '',
         includeAlbum ? albumName : undefined,
         track.releaseDate,
         includeAlbum,
         useScoreOnly,
         onlyAlbum,
-        noSecondaryType
+        noSecondaryType,
+        request.query.fetchReleaseMetadata !== 'false'
       );
       return candidates;
     }
@@ -320,6 +331,14 @@ export async function trackRoutes(app: FastifyInstance) {
         where: { trackId: track.id },
         update: { ...request.body, selectedAt: new Date() },
         create: { trackId: track.id, ...request.body },
+      });
+
+      await prisma.track.update({
+        where: { id: track.id },
+        data: {
+          trackName: request.body.title,
+          artistNames: parseArtistNames(request.body.artistCredit),
+        },
       });
 
       return match;

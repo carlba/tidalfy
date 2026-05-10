@@ -42,12 +42,14 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [savingMbid, setSavingMbid] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchTitle, setSearchTitle] = useState<string>(track?.trackName ?? '');
-  const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames[0] ?? '');
+  const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames.join(', ') ?? '');
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
+  const [useArtistFilter, setUseArtistFilter] = useState(true);
   const [useScoreOnly, setUseScoreOnly] = useState(false);
   const [searchOnlyAlbum, setSearchOnlyAlbum] = useState(true);
   const [searchNoSecondaryType, setSearchNoSecondaryType] = useState(true);
+  const [fetchReleaseMetadata, setFetchReleaseMetadata] = useState(true);
   const [officialOnly, setOfficialOnly] = useState(true);
   const [typeFilter, setTypeFilter] = useState('Album');
   const [typeFilterReversed, setTypeFilterReversed] = useState(false);
@@ -69,11 +71,13 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
         track.id,
         searchTitle,
         searchArtist,
+        useArtistFilter,
         includeAlbum,
         includeAlbum ? albumFilterValue : '',
         useScoreOnly,
         searchOnlyAlbum,
-        searchNoSecondaryType
+        searchNoSecondaryType,
+        fetchReleaseMetadata
       );
       setCandidates(results);
       setHasSearched(true);
@@ -112,9 +116,12 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setSecondaryTypeFilterExact(false);
       setSearchOnlyAlbum(true);
       setSearchNoSecondaryType(true);
+      setIncludeAlbum(false);
+      setFetchReleaseMetadata(true);
+      setUseArtistFilter(true);
       setExpandedMbids(new Set());
       setSearchTitle(track?.trackName ?? '');
-      setSearchArtist(track?.artistNames[0] ?? '');
+      setSearchArtist(track?.artistNames.join(', ') ?? '');
     }
   }
 
@@ -212,34 +219,45 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 placeholder={track?.trackName ?? 'Type title to search'}
               />
             </label>
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium">Search artist</span>
-              <Input
-                type="text"
-                value={searchArtist}
-                onChange={event => setSearchArtist(event.target.value)}
-                placeholder={track?.artistNames[0] ?? 'Type artist to search'}
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium">Spotify album</span>
-              <Input
-                type="text"
-                value={albumFilterValue}
-                onChange={event => setAlbumFilter(event.target.value)}
-                placeholder="Type album name to filter results"
-              />
-            </label>
-            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-              <label className="flex items-center gap-2 text-sm">
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={useArtistFilter}
+                  onChange={event => setUseArtistFilter(event.target.checked)}
+                  className="h-4 w-4 rounded border-muted-foreground accent-primary focus:ring-primary"
+                  aria-label="Enable artist search"
+                />
+                <Input
+                  type="text"
+                  value={searchArtist}
+                  onChange={event => setSearchArtist(event.target.value)}
+                  placeholder={track?.artistNames.join(', ') ?? 'Type artist to search'}
+                  disabled={!useArtistFilter}
+                  aria-label="Artist search"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={includeAlbum}
                   onChange={event => setIncludeAlbum(event.target.checked)}
-                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+                  className="h-4 w-4 rounded border-muted-foreground accent-primary focus:ring-primary"
+                  aria-label="Enable album search"
                 />
-                <span className="font-medium">Apply album name filter to search</span>
-              </label>
+                <Input
+                  type="text"
+                  value={albumFilterValue}
+                  onChange={event => setAlbumFilter(event.target.value)}
+                  placeholder="Type album name to filter results"
+                  disabled={!includeAlbum}
+                  aria-label="Album search"
+                />
+              </div>
+            </div>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -249,6 +267,8 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 />
                 <span className="font-medium">Sort by MusicBrainz score only</span>
               </label>
+            </div>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -267,6 +287,22 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 />
                 <span className="font-medium">No secondary release types</span>
               </label>
+            </div>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={fetchReleaseMetadata}
+                  onChange={event => setFetchReleaseMetadata(event.target.checked)}
+                  className="h-5 w-5 rounded border-muted-foreground accent-primary focus:ring-primary"
+                />
+                <div>
+                  <span className="font-medium">Fetch release metadata</span>
+                  <p className="text-xs text-muted-foreground">
+                    Load extra release metadata from MusicBrainz when available.
+                  </p>
+                </div>
+              </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -276,10 +312,10 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
                 />
                 <span className="font-medium">Official release only</span>
               </label>
-              <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
-                {useScoreOnly ? 'Score-only sorting' : 'Custom ranking'}
-              </span>
             </div>
+            <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
+              {useScoreOnly ? 'Score-only sorting' : 'Custom ranking'}
+            </span>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-2 text-sm">
                 <span className="flex items-center justify-between gap-2 font-medium">

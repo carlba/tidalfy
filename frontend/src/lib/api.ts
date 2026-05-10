@@ -47,19 +47,26 @@ export async function searchMusicBrainz(
   trackId: string,
   searchTitle = '',
   searchArtist = '',
+  useArtistFilter = true,
   includeAlbum = false,
   albumName = '',
   useScoreOnly = false,
   onlyAlbum = true,
-  noSecondaryType = true
+  noSecondaryType = true,
+  fetchReleaseMetadata = true
 ): Promise<MusicBrainzCandidate[]> {
   const query = new URLSearchParams();
   if (searchTitle.trim()) {
     query.set('searchTitle', searchTitle.trim());
   }
-  if (searchArtist.trim()) {
-    query.set('searchArtist', searchArtist.trim());
+  if (useArtistFilter) {
+    if (searchArtist.trim()) {
+      query.set('searchArtist', searchArtist.trim());
+    }
+  } else {
+    query.set('searchArtist', '');
   }
+  query.set('useArtistFilter', String(useArtistFilter));
   if (includeAlbum) {
     query.set('includeAlbum', String(includeAlbum));
   }
@@ -69,6 +76,7 @@ export async function searchMusicBrainz(
   query.set('useScoreOnly', String(useScoreOnly));
   query.set('onlyAlbum', String(onlyAlbum));
   query.set('noSecondaryType', String(noSecondaryType));
+  query.set('fetchReleaseMetadata', String(fetchReleaseMetadata));
 
   const queryString = query.toString();
   const url = queryString

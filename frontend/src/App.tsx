@@ -82,6 +82,10 @@ export function App() {
           : t
       )
     );
+
+    if (selectedBatchId !== null) {
+      void loadTracks(selectedBatchId, trackStatus);
+    }
   }
 
   function handleDiscogsSaved(trackId: string, candidate: DiscogsMatch) {

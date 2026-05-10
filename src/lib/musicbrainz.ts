@@ -5,7 +5,7 @@ import KeyvPostgres from '@keyv/postgres';
 import { config, LOGGER } from '../registry.js';
 
 const MUSICBRAINZ_BASE_URL = 'https://musicbrainz.org/ws/2';
-const USER_AGENT = 'tidalfy/0.0.1 (https://github.com/carlba/tidalfy)';
+const USER_AGENT = 'tidalfy/1.0 (genzorg@gmail.com)';
 const MUSICBRAINZ_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 
 const logger = LOGGER.child({ module: 'musicbrainz' });
@@ -179,7 +179,16 @@ async function fetchReleaseMetadata(
 }
 
 function normalizeQueryText(text: string): string {
-  return text.replace(/"/g, '').trim();
+  return text.replace(/(["\\])/g, '\\$1').trim();
+}
+
+function formatFieldValue(value: string): string {
+  return /\s/.test(value) ? `"${value}"` : value;
+}
+
+function simplifyRecordingTitle(text: string): string {
+  const stripped = /^(.*?)(?:\s*-\s*live\b.*)$/i.exec(text);
+  return stripped ? stripped[1].trim() : text;
 }
 
 function normalizeSearchText(text: string): string {
@@ -334,17 +343,24 @@ export async function searchMusicBrainz(
   includeAlbum = false,
   useScoreOnly = false,
   onlyAlbum = true,
-  noSecondaryType = true
+  noSecondaryType = true,
+  shouldFetchReleaseMetadata = true
 ): Promise<MusicBrainzCandidate[]> {
   try {
-    const sanitizedTrackName = normalizeQueryText(trackName);
     const sanitizedArtistName = normalizeQueryText(artistName);
     const sanitizedAlbumName = albumName ? normalizeQueryText(albumName) : undefined;
+    const simplifiedTrackName = simplifyRecordingTitle(trackName);
+    const quotedRecordingQuery = `recording:"${normalizeQueryText(simplifiedTrackName)}"`;
+    const artistField = sanitizedArtistName
+      ? `artist:${formatFieldValue(sanitizedArtistName)}`
+      : null;
 
-    const baseQuery = [`recording:"${sanitizedTrackName}"`, `artist:"${sanitizedArtistName}"`];
-    const albumQuery = sanitizedAlbumName
-      ? [...baseQuery, `release:"${sanitizedAlbumName}"`]
-      : baseQuery;
+    const primaryQuery = artistField
+      ? `${quotedRecordingQuery} AND ${artistField}`
+      : quotedRecordingQuery;
+    const albumPrimaryQuery = sanitizedAlbumName
+      ? `${primaryQuery} AND release:"${sanitizedAlbumName}"`
+      : primaryQuery;
 
     async function runSearch(query: string) {
       const pageSize = 100;
@@ -431,7 +447,9 @@ export async function searchMusicBrainz(
       );
 
       const releaseMetadata =
-        releaseIdsToFetch.length > 0 ? await fetchReleaseMetadata(releaseIdsToFetch) : {};
+        shouldFetchReleaseMetadata && releaseIdsToFetch.length > 0
+          ? await fetchReleaseMetadata(releaseIdsToFetch)
+          : {};
 
       const candidates = filteredRecordings.flatMap(recording => {
         const releases = recording.releases ?? [];
@@ -534,13 +552,13 @@ export async function searchMusicBrainz(
     }
 
     if (includeAlbum && sanitizedAlbumName) {
-      const albumResults = await runSearch(albumQuery.join(' AND '));
+      const albumResults = await runSearch(albumPrimaryQuery);
       if (albumResults.length > 0) {
         return albumResults;
       }
     }
 
-    return await runSearch(baseQuery.join(' AND '));
+    return await runSearch(primaryQuery);
   } catch {
     return [];
   }

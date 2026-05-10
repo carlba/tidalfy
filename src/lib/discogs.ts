@@ -6,7 +6,7 @@ import { config } from '../registry.js';
 const LOGGER = createLogger(undefined, 'development').child({ module: 'discogs' });
 
 const DISCOGS_BASE_URL = 'https://api.discogs.com';
-const USER_AGENT = 'tidalfy/0.0.1 (https://github.com/carlba/tidalfy)';
+const USER_AGENT = 'tidalfy/1.0 (genzorg@gmail.com)';
 
 const discogsSearchResultSchema = z.object({
   id: z.number(),
