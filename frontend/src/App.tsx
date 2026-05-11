@@ -76,7 +76,7 @@ export function App() {
 
   function handleMatchSaved(trackId: string, candidate: MusicBrainzCandidate) {
     const artistCredit = candidate.artistCredit
-      .split(/\s*(?:,|&|\/)\s*/)
+      .split(/\s*(?:,|\/)\s*/)
       .map(name => name.trim())
       .filter(Boolean);
 

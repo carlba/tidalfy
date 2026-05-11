@@ -120,7 +120,7 @@ function parseArtistNames(artistCredit: string | string[]): string[] {
   return rawCredits
     .flatMap(credit =>
       credit
-        .split(/\s*(?:,|&|\/)\s*/)
+        .split(/\s*(?:,|\/)\s*/)
         .map(name => name.trim())
         .filter(Boolean)
     )
