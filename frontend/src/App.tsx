@@ -85,15 +85,13 @@ export function App() {
         track.id === trackId
           ? {
               ...track,
+              trackName: candidate.title,
+              artistNames: artistCredit,
               match: { ...candidate, artistCredit, selectedAt: new Date().toISOString() },
             }
           : track
       )
     );
-
-    if (selectedBatchId !== null) {
-      void loadTracks(selectedBatchId, trackStatus);
-    }
   }
 
   function handleDiscogsSaved(trackId: string, candidate: DiscogsMatch) {
