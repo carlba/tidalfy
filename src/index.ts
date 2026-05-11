@@ -1,13 +1,27 @@
-import { fileURLToPath } from 'url';
 import { config, LOGGER } from './registry.js';
+import { startServer } from './server.js';
 
-const logger = LOGGER.child({ module: 'index' });
+process.on('warning', warning => {
+  if (warning.name === 'MaxListenersExceededWarning') return;
+  console.warn(warning.stack);
+});
 
-export function helloWorld() {
-  return `Hello World! NODE_ENV is ${config.NODE_ENV}`;
+const redact = ({ DATABASE_URL, DISCOGS_USER_TOKEN, ...rest }: Record<string, unknown>) => ({
+  ...rest,
+  DATABASE_URL: DATABASE_URL ? '<redacted>' : undefined,
+  DISCOGS_USER_TOKEN: DISCOGS_USER_TOKEN ? '<redacted>' : undefined,
+});
+
+async function main() {
+  if (config.NODE_ENV === 'test') {
+    return;
+  }
+
+  LOGGER.info({ config: redact(config) }, 'Starting server');
+  await startServer();
 }
 
-const isMain = process.argv[1] === fileURLToPath(import.meta.url);
-if (isMain) {
-  logger.info(helloWorld());
-}
+main().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});

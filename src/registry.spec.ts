@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const childMock = vi.fn().mockReturnValue({ child: vi.fn() });
 const createLoggerMock = vi.fn().mockReturnValue({ child: childMock });
@@ -7,13 +7,21 @@ vi.mock('./lib/logger.js', () => ({
   createLogger: createLoggerMock,
 }));
 
+const TEST_DATABASE_URL = 'postgresql://user:pass@localhost:5432/db';
+
 describe('registry module', () => {
   const originalNodeEnv = process.env.NODE_ENV;
+  const originalDatabaseUrl = process.env.DATABASE_URL;
+
+  beforeEach(() => {
+    process.env.DATABASE_URL = TEST_DATABASE_URL;
+  });
 
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.NODE_ENV = originalNodeEnv;
+    process.env.DATABASE_URL = originalDatabaseUrl;
   });
 
   it('boots a production logger and then creates a config logger', async () => {
