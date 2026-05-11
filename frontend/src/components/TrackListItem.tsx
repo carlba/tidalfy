@@ -1,6 +1,7 @@
 import { Check, Archive, Disc, Music2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ReleaseSecondaryTypeBadges } from '@/components/ReleaseSecondaryTypeBadges';
 import type { Track } from '@/lib/types';
 
 interface TrackListItemProps {
@@ -81,9 +82,15 @@ export function TrackListItem({
                 <span className="text-xs text-success truncate">
                   {track.match.title} — {track.match.artistCredit.join(', ')}
                   {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
-                  {track.match.releaseType ? ` · ${track.match.releaseType}` : ''}
+                  {track.releaseType && track.releaseType !== 'Album'
+                    ? ` · ${track.match.releaseType}`
+                    : ''}
                 </span>
               </div>
+              <ReleaseSecondaryTypeBadges
+                releaseType={track.match.releaseType}
+                secondaryTypes={track.match.releaseSecondaryTypes}
+              />
               {track.match.releaseId ? (
                 <a
                   href={`https://musicbrainz.org/release/${track.match.releaseId}`}

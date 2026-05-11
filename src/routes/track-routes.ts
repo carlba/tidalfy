@@ -2,6 +2,7 @@ import { type FastifyInstance } from 'fastify';
 import { type ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { prisma } from '../lib/db.js';
+import { type Prisma } from '../generated/prisma/index.js';
 import { searchMusicBrainz } from '../lib/musicbrainz.js';
 import { searchDiscogs } from '../lib/discogs.js';
 
@@ -14,6 +15,7 @@ const trackSchema = z.object({
   artistNames: z.array(z.string()),
   releaseDate: z.string().nullable(),
   durationMs: z.number(),
+  releaseSecondaryTypes: z.array(z.string()),
   popularity: z.number(),
   explicit: z.boolean(),
   addedBy: z.string().nullable(),
@@ -21,6 +23,7 @@ const trackSchema = z.object({
   genres: z.array(z.string()),
   recordLabel: z.string().nullable(),
   archived: z.boolean(),
+  rawData: z.any(),
   match: z
     .object({
       mbid: z.string(),
@@ -58,6 +61,8 @@ const trackSchema = z.object({
     })
     .nullable(),
 });
+
+type PrismaTrack = Prisma.TrackGetPayload<{ include: { match: true; discogsMatch: true } }>;
 
 const musicBrainzCandidateSchema = z.object({
   mbid: z.string(),
@@ -133,12 +138,7 @@ function normalizeTrackTitle(track: { trackName: string; match: { title: string 
   return track.match?.title ?? track.trackName;
 }
 
-function normalizeAlbumName(track: {
-  albumName: string;
-  trackName: string;
-  match: { releaseTitle: string | null } | null;
-  discogsMatch: { releaseTitle: string | null; title: string } | null;
-}) {
+function normalizeAlbumName(track: PrismaTrack) {
   if (track.match?.releaseTitle) {
     return track.match.releaseTitle;
   }
@@ -157,6 +157,16 @@ function normalizeAlbumName(track: {
   }
 
   return track.albumName;
+}
+
+function normalizeReleaseType(track: PrismaTrack): string | null {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return track.match?.releaseType ?? null;
+}
+
+function normalizeReleaseSecondaryType(track: PrismaTrack): string[] {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return track.match?.releaseSecondaryTypes ?? [];
 }
 
 function normalizeArtistNames(track: {
@@ -200,11 +210,14 @@ export async function trackRoutes(app: FastifyInstance) {
         orderBy: [{ addedAt: 'desc' }, { trackName: 'asc' }],
         include: { match: true, discogsMatch: true },
       });
+
       return tracks.map(track => ({
         ...track,
         trackName: normalizeTrackTitle(track),
         albumName: normalizeAlbumName(track),
         artistNames: normalizeArtistNames(track),
+        releaseType: normalizeReleaseType(track),
+        releaseSecondaryTypes: normalizeReleaseSecondaryType(track),
       }));
     }
   );

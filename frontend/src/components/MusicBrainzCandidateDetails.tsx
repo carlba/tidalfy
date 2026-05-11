@@ -1,5 +1,6 @@
 import { DetailText } from '@/components/ui/detail-text';
 import { MusicBrainzCandidateBadges } from '@/components/MusicBrainzCandidateBadges';
+import { ReleaseSecondaryTypeBadges } from '@/components/ReleaseSecondaryTypeBadges';
 import type { MusicBrainzCandidate } from '@/lib/types';
 
 interface MusicBrainzCandidateDetailsProps {
@@ -37,8 +38,13 @@ export function MusicBrainzCandidateDetails({
       {showTypeDetails && candidate.releaseType && (
         <DetailText>Type: {candidate.releaseType}</DetailText>
       )}
-      {showTypeDetails && candidate.releaseSecondaryTypes?.length ? (
-        <DetailText>Secondary: {candidate.releaseSecondaryTypes.join(', ')}</DetailText>
+      {showTypeDetails ? (
+        <div className="mt-1">
+          <ReleaseSecondaryTypeBadges
+            releaseType={candidate.releaseType}
+            secondaryTypes={candidate.releaseSecondaryTypes}
+          />
+        </div>
       ) : null}
       {showBadges && <MusicBrainzCandidateBadges candidate={candidate} />}
     </>

@@ -69,6 +69,8 @@ export interface Track {
   trackName: string;
   albumName: string;
   artistNames: string[];
+  releaseType: string;
+  releaseSecondaryTypes: string[];
   releaseDate: string | null;
   durationMs: number;
   popularity: number;
