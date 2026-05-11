@@ -47,6 +47,7 @@ export default defineConfig(
     files: ['src/lib/config.ts', 'src/**/*.spec.ts'],
     rules: {
       'no-restricted-syntax': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
   {

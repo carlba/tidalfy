@@ -194,7 +194,7 @@ export async function trackRoutes(app: FastifyInstance) {
       const useScoreOnly = request.query.useScoreOnly === 'true';
       const onlyAlbum = request.query.onlyAlbum !== 'false';
       const noSecondaryType = request.query.noSecondaryType !== 'false';
-      const trackName = useTitleFilter ? searchTitle || track.trackName : '';
+      const trackName = useTitleFilter ? (searchTitle?.length ? searchTitle : track.trackName) : '';
       const candidates = await searchMusicBrainz(
         trackName,
         useArtistFilter ? (searchArtist ?? track.artistNames[0] ?? '') : '',

@@ -179,7 +179,9 @@ describe('searchMusicBrainz', () => {
           id: 'album-only-1',
           title: 'Some Track',
           score: 100,
-          'artist-credit': [{ artist: { id: '4', name: 'Unknown Artist' }, name: 'Unknown Artist' }],
+          'artist-credit': [
+            { artist: { id: '4', name: 'Unknown Artist' }, name: 'Unknown Artist' },
+          ],
           releases: [
             {
               id: 'release-4',
@@ -194,7 +196,15 @@ describe('searchMusicBrainz', () => {
 
     mockGet.mockReturnValue({ json: mockJson });
 
-    const results = await searchMusicBrainz('', '', 'The Wrong Kind of War', undefined, false, false, true);
+    const results = await searchMusicBrainz(
+      '',
+      '',
+      'The Wrong Kind of War',
+      undefined,
+      false,
+      false,
+      true
+    );
 
     expect(mockGet).toHaveBeenCalled();
     const [path, options] = mockGet.mock.calls[0] as [

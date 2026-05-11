@@ -364,9 +364,10 @@ export async function searchMusicBrainz(
       return [];
     }
 
-    const albumPrimaryQuery = recordingArtistQuery && albumField
-      ? `${recordingArtistQuery} AND ${albumField}`
-      : primaryQuery;
+    const albumPrimaryQuery =
+      recordingArtistQuery && albumField
+        ? `${recordingArtistQuery} AND ${albumField}`
+        : primaryQuery;
 
     async function runSearch(query: string) {
       const pageSize = 100;

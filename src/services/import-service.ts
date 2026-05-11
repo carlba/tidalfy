@@ -8,6 +8,13 @@ export interface ImportBatchResult {
   errors: ParseResult['errors'];
 }
 
+export function parseDelimitedList(rawValue: string): string[] {
+  return rawValue
+    .split(/[,;]+/)
+    .map(value => value.trim())
+    .filter(value => value.length > 0);
+}
+
 export async function importSpotifyCsv(
   csvContent: string,
   fileName: string
@@ -22,21 +29,14 @@ export async function importSpotifyCsv(
           spotifyUri: row['Track URI'],
           trackName: row['Track Name'],
           albumName: row['Album Name'],
-          artistNames: row['Artist Name(s)']
-            .split(',')
-            .map(artistName => artistName.trim())
-            .filter(artistName => artistName.length > 0),
+          artistNames: parseDelimitedList(row['Artist Name(s)']),
           releaseDate: row['Release Date'] ?? null,
           durationMs: row['Duration (ms)'],
           popularity: row.Popularity,
           explicit: row.Explicit,
           addedBy: row['Added By'] ?? null,
           addedAt: row['Added At'] ?? null,
-          genres: row.Genres
-            ? row.Genres.split(',')
-                .map(genre => genre.trim())
-                .filter(genre => genre.length > 0)
-            : [],
+          genres: row.Genres ? parseDelimitedList(row.Genres) : [],
           recordLabel: row['Record Label'] ?? null,
           rawData: row,
         })),
