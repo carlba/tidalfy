@@ -14,6 +14,8 @@ export interface MusicBrainzMatch {
   releaseAsin: string | null;
   releaseTitle: string | null;
   releaseDate: string | null;
+  releaseType: string | null;
+  releaseSecondaryTypes: string[];
   isrc: string | null;
   score: number | null;
   selectedAt: string;

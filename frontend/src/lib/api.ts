@@ -109,6 +109,8 @@ export async function saveMatch(
       releaseAsin: candidate.releaseAsin,
       releaseTitle: candidate.releaseTitle,
       releaseDate: candidate.releaseDate,
+      releaseType: candidate.releaseType,
+      releaseSecondaryTypes: candidate.releaseSecondaryTypes,
       isrc: candidate.isrc,
       score: candidate.score,
     }),

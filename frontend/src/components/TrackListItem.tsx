@@ -81,6 +81,7 @@ export function TrackListItem({
                 <span className="text-xs text-success truncate">
                   {track.match.title} — {track.match.artistCredit.join(', ')}
                   {track.match.releaseTitle ? ` · ${track.match.releaseTitle}` : ''}
+                  {track.match.releaseType ? ` · ${track.match.releaseType}` : ''}
                 </span>
               </div>
               {track.match.releaseId ? (
