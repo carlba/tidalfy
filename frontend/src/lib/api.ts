@@ -47,7 +47,7 @@ export async function searchMusicBrainz(
   trackId: string,
   searchTitle = '',
   useTitleFilter = true,
-  searchArtist = '',
+  searchArtist: string | string[] = '',
   useArtistFilter = true,
   includeAlbum = false,
   albumName = '',
@@ -62,7 +62,14 @@ export async function searchMusicBrainz(
     query.set('searchTitle', searchTitle.trim());
   }
   if (useArtistFilter) {
-    if (searchArtist.trim()) {
+    if (Array.isArray(searchArtist)) {
+      searchArtist.forEach(value => {
+        const trimmed = value.trim();
+        if (trimmed) {
+          query.append('searchArtist', trimmed);
+        }
+      });
+    } else if (searchArtist.trim()) {
       query.set('searchArtist', searchArtist.trim());
     }
   } else {

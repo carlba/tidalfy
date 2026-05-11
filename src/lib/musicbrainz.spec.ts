@@ -78,6 +78,58 @@ describe('searchMusicBrainz', () => {
     ]);
   });
 
+  it('builds a MusicBrainz recording+artist AND query for multi-artist tracks', async () => {
+    const mockJson = vi.fn().mockResolvedValue({
+      recordings: [
+        {
+          id: 'multi-artist-1',
+          title: 'One More Life',
+          score: 100,
+          'artist-credit': [
+            { artist: { id: '5', name: 'Dua Lipa' }, name: 'Dua Lipa' },
+            { artist: { id: '6', name: 'Elton John' }, name: 'Elton John' },
+          ],
+          releases: [
+            {
+              id: 'release-5',
+              title: 'Future Nostalgia',
+              status: 'Official',
+              'release-group': { 'primary-type': 'Album' },
+            },
+          ],
+        },
+      ],
+    });
+
+    mockGet.mockReturnValue({ json: mockJson });
+
+    const results = await searchMusicBrainz(
+      'One More Life',
+      ['Dua Lipa', 'Elton John'],
+      undefined,
+      undefined,
+      false,
+      false,
+      true
+    );
+
+    expect(mockGet).toHaveBeenCalled();
+    const [path, options] = mockGet.mock.calls[0] as [
+      string,
+      { searchParams: Record<string, string> },
+    ];
+    expect(path).toBe('recording');
+    expect(options.searchParams.query).toBe(
+      'recording:"One More Life" AND artist:"Dua Lipa" AND artist:"Elton John"'
+    );
+    expect(results).toEqual([
+      expect.objectContaining({
+        mbid: 'multi-artist-1',
+        title: 'One More Life',
+      }),
+    ]);
+  });
+
   it('builds a MusicBrainz recording-only query when artist filter is disabled', async () => {
     const mockJson = vi.fn().mockResolvedValue({
       recordings: [

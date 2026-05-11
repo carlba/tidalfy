@@ -217,7 +217,7 @@ export async function trackRoutes(app: FastifyInstance) {
         querystring: z.object({
           searchTitle: z.string().optional(),
           useTitleFilter: z.string().optional(),
-          searchArtist: z.string().optional(),
+          searchArtist: z.union([z.string(), z.array(z.string())]).optional(),
           useArtistFilter: z.string().optional(),
           includeAlbum: z.string().optional(),
           albumName: z.string().optional(),
@@ -240,7 +240,7 @@ export async function trackRoutes(app: FastifyInstance) {
 
       const searchTitle = request.query.searchTitle?.trim();
       const useTitleFilter = request.query.useTitleFilter !== 'false';
-      const searchArtist = request.query.searchArtist?.trim();
+      const searchArtist = request.query.searchArtist;
       const useArtistFilter = request.query.useArtistFilter !== 'false';
       const includeAlbum = request.query.includeAlbum === 'true';
       const albumName = request.query.albumName?.trim();
@@ -248,9 +248,16 @@ export async function trackRoutes(app: FastifyInstance) {
       const onlyAlbum = request.query.onlyAlbum !== 'false';
       const noSecondaryType = request.query.noSecondaryType !== 'false';
       const trackName = useTitleFilter ? (searchTitle?.length ? searchTitle : track.trackName) : '';
+      const artistQuery = searchArtist?.length
+        ? Array.isArray(searchArtist)
+          ? searchArtist
+          : [searchArtist]
+        : track.artistNames.length > 0
+          ? track.artistNames
+          : [];
       const candidates = await searchMusicBrainz(
         trackName,
-        useArtistFilter ? (searchArtist ?? track.artistNames[0] ?? '') : '',
+        useArtistFilter ? artistQuery : [],
         includeAlbum ? albumName : undefined,
         track.releaseDate,
         includeAlbum,

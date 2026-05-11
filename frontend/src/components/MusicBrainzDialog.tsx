@@ -42,7 +42,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [savingMbid, setSavingMbid] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchTitle, setSearchTitle] = useState<string>(track?.trackName ?? '');
-  const [searchArtist, setSearchArtist] = useState<string>(track?.artistNames.join(', ') ?? '');
+  const [searchArtist, setSearchArtist] = useState<string>('');
   const [includeAlbum, setIncludeAlbum] = useState(false);
   const [albumFilter, setAlbumFilter] = useState<string | undefined>(undefined);
   const [useArtistFilter, setUseArtistFilter] = useState(true);
@@ -62,11 +62,12 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
     setSearchError(null);
     setHasSearched(false);
     try {
+      const artistQuery = searchArtist.trim() ? searchArtist : track.artistNames;
       const results = await searchMusicBrainz(
         track.id,
         searchTitle,
         useTitleFilter,
-        searchArtist,
+        artistQuery,
         useArtistFilter,
         includeAlbum,
         includeAlbum ? albumFilterValue : '',
@@ -112,7 +113,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setResultFilter('');
       setExpandedMbids(new Set());
       setSearchTitle(track?.trackName ?? '');
-      setSearchArtist(track?.artistNames.join(', ') ?? '');
+      setSearchArtist('');
     }
   }
 

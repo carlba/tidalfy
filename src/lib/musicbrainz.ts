@@ -186,6 +186,19 @@ function formatFieldValue(value: string): string {
   return /\s/.test(value) ? `"${value}"` : value;
 }
 
+function buildArtistQuery(artistInput: string | string[]): string | null {
+  const parts = Array.isArray(artistInput)
+    ? artistInput.map(part => normalizeQueryText(part))
+    : [normalizeQueryText(artistInput)];
+
+  const normalizedParts = parts.filter(Boolean);
+  if (normalizedParts.length === 0) {
+    return null;
+  }
+
+  return normalizedParts.map(part => `artist:${formatFieldValue(part)}`).join(' AND ');
+}
+
 function simplifyRecordingTitle(text: string): string {
   const stripped = /^(.*?)(?:\s*-\s*live\b.*)$/i.exec(text);
   return stripped ? stripped[1].trim() : text;
@@ -337,7 +350,7 @@ export function selectBestRelease(
 
 export async function searchMusicBrainz(
   trackName: string,
-  artistName: string,
+  artistName: string | string[],
   albumName?: string,
   trackReleaseDate?: string | null,
   includeAlbum = false,
@@ -347,15 +360,16 @@ export async function searchMusicBrainz(
   shouldFetchReleaseMetadata = true
 ): Promise<MusicBrainzCandidate[]> {
   try {
-    const sanitizedArtistName = normalizeQueryText(artistName);
+    const sanitizedArtistName =
+      typeof artistName === 'string'
+        ? normalizeQueryText(artistName)
+        : artistName.map(normalizeQueryText);
     const sanitizedAlbumName = albumName ? normalizeQueryText(albumName) : undefined;
     const simplifiedTrackName = trackName ? simplifyRecordingTitle(trackName) : '';
     const quotedRecordingQuery = simplifiedTrackName
       ? `recording:"${normalizeQueryText(simplifiedTrackName)}"`
       : null;
-    const artistField = sanitizedArtistName
-      ? `artist:${formatFieldValue(sanitizedArtistName)}`
-      : null;
+    const artistField = sanitizedArtistName ? buildArtistQuery(sanitizedArtistName) : null;
     const albumField = sanitizedAlbumName ? `release:"${sanitizedAlbumName}"` : null;
 
     const recordingArtistQuery = [quotedRecordingQuery, artistField].filter(Boolean).join(' AND ');
