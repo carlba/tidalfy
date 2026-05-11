@@ -50,7 +50,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
   const [useScoreOnly, setUseScoreOnly] = useState(false);
   const [searchOnlyAlbum, setSearchOnlyAlbum] = useState(true);
   const [searchNoSecondaryType, setSearchNoSecondaryType] = useState(true);
-  const [fetchReleaseMetadata, setFetchReleaseMetadata] = useState(true);
+  const [fetchReleaseMetadata, setFetchReleaseMetadata] = useState(false);
   const [resultFilter, setResultFilter] = useState('');
   const [expandedMbids, setExpandedMbids] = useState<Set<string>>(new Set());
 
@@ -105,7 +105,7 @@ export function MusicBrainzDialog({ track, onClose, onMatchSaved }: MusicBrainzD
       setHasSearched(false);
       setSearchError(null);
       setIncludeAlbum(false);
-      setFetchReleaseMetadata(true);
+      setFetchReleaseMetadata(false);
       setSearchOnlyAlbum(true);
       setSearchNoSecondaryType(true);
       setUseArtistFilter(true);
