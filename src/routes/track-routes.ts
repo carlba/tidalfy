@@ -127,6 +127,52 @@ function parseArtistNames(artistCredit: string | string[]): string[] {
     .filter(Boolean);
 }
 
+function normalizeTrackTitle(track: { trackName: string; match: { title: string } | null }) {
+  return track.match?.title ?? track.trackName;
+}
+
+function normalizeAlbumName(track: {
+  albumName: string;
+  trackName: string;
+  match: { releaseTitle: string | null } | null;
+  discogsMatch: { releaseTitle: string | null; title: string } | null;
+}) {
+  if (track.match?.releaseTitle) {
+    return track.match.releaseTitle;
+  }
+
+  if (track.discogsMatch) {
+    const releaseTitle = track.discogsMatch.releaseTitle;
+    if (releaseTitle) {
+      return releaseTitle;
+    }
+
+    const discogsTitle = track.discogsMatch.title?.trim();
+    const trackTitle = track.trackName?.trim();
+    if (discogsTitle && trackTitle && discogsTitle.toLowerCase() !== trackTitle.toLowerCase()) {
+      return discogsTitle;
+    }
+  }
+
+  return track.albumName;
+}
+
+function normalizeArtistNames(track: {
+  artistNames: string[];
+  match: { artistCredit: string[] } | null;
+  discogsMatch: { artistCredit: string } | null;
+}) {
+  if (track.match?.artistCredit) {
+    return track.match.artistCredit;
+  }
+
+  if (track.discogsMatch?.artistCredit) {
+    return parseArtistNames(track.discogsMatch.artistCredit);
+  }
+
+  return track.artistNames;
+}
+
 export async function trackRoutes(app: FastifyInstance) {
   const server = app.withTypeProvider<ZodTypeProvider>();
 
@@ -152,7 +198,12 @@ export async function trackRoutes(app: FastifyInstance) {
         orderBy: [{ addedAt: 'desc' }, { trackName: 'asc' }],
         include: { match: true, discogsMatch: true },
       });
-      return tracks;
+      return tracks.map(track => ({
+        ...track,
+        trackName: normalizeTrackTitle(track),
+        albumName: normalizeAlbumName(track),
+        artistNames: normalizeArtistNames(track),
+      }));
     }
   );
 
